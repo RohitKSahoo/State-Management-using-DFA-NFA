@@ -231,8 +231,8 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
             })
           );
 
-          // 500ms delay per state transition step
-          await new Promise((r) => setTimeout(r, 500));
+          // 700ms delay per state transition step for clear visual animation
+          await new Promise((r) => setTimeout(r, 700));
         }
       }
     } catch (err) {

@@ -53,8 +53,11 @@ export const CustomStateNode: React.FC<{ data: any; selected?: boolean }> = ({ d
   let textColor = 'var(--text-primary)';
 
   if (isCurrentSim) {
-    bgColor = '#f4f4f5';
-    textColor = '#09090b';
+    bgColor = '#22c55e';
+    textColor = '#000000';
+    borderColor = '#ffffff';
+    borderWidth = '2px';
+    shadowStyle = '0 0 25px rgba(34, 197, 94, 1), 0 0 50px rgba(34, 197, 94, 0.6)';
   } else if (isHighlighted) {
     bgColor = '#27272a';
   }
