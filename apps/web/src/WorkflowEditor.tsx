@@ -29,7 +29,7 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
   const [edges, setEdges] = useState<Edge[]>([]);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [sidebarWidth, setSidebarWidth] = useState(450); // Increased default width
+  const [sidebarWidth, setSidebarWidth] = useState(525); // Increased default width
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const [showAddPresetMenu, setShowAddPresetMenu] = useState(false);
 
