@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Project {
+  id          String     @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  workflows   Workflow[]
+}
+
+model Workflow {
+  id          String          @id @default(cuid())
+  projectId   String
+  name        String
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  project     Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  states      WorkflowState[]
+  transitions Transition[]
+
+  @@index([projectId])
+}
+
+model WorkflowState {
+  id          String       @id @default(cuid())
+  workflowId  String
+  name        String
+  isInitial   Boolean      @default(false)
+  isFinal     Boolean      @default(false)
+  positionX   Float        @default(0)
+  positionY   Float        @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  workflow    Workflow     @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  outgoing    Transition[] @relation("TransitionSource")
+  incoming    Transition[] @relation("TransitionTarget")
+
+  @@index([workflowId])
+}
+
+model Transition {
+  id           String        @id @default(cuid())
+  workflowId   String
+  fromStateId  String
+  toStateId    String
+  event        String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  workflow     Workflow      @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  fromState    WorkflowState @relation("TransitionSource", fields: [fromStateId], references: [id], onDelete: Cascade)
+  toState      WorkflowState @relation("TransitionTarget", fields: [toStateId], references: [id], onDelete: Cascade)
+
+  @@index([workflowId])
+}

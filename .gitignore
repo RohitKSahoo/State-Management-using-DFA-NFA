@@ -1,0 +1,25 @@
+# Node dependencies
+node_modules/
+.npm
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# SQLite Database & Prisma generated files
+apps/api/prisma/*.db
+apps/api/prisma/*.db-journal
+
+# Environment variables
+.env
+.env.local
+
+# IDE & OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Antigravity artifacts & logs
+.system_generated/

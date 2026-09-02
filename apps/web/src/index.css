@@ -1,0 +1,81 @@
+:root {
+  /* Editorial Sharp Dark Theme */
+  --bg-main: #050505;
+  --bg-subtle: #0d0d0d;
+  --bg-card: #121212;
+  --bg-hover: #1c1c1c;
+
+  --border-light: #222222;
+  --border-strong: #ffffff;
+
+  --text-primary: #f8f8f8;
+  --text-secondary: #a0a0a0;
+  --text-tertiary: #666666;
+
+  --font-serif: 'Cormorant Garamond', Georgia, serif;
+  --font-display: 'Space Grotesk', -apple-system, sans-serif;
+  --font-body: 'Space Grotesk', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Sharp Scrollbars */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-main);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-light);
+  border-radius: 0px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* React Flow Overrides with Sharp Zero-Radius Edges */
+.react-flow__background {
+  background-color: var(--bg-subtle) !important;
+}
+.react-flow__controls {
+  box-shadow: none !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: 0px !important;
+  overflow: hidden;
+  background: var(--bg-card) !important;
+}
+.react-flow__controls-button {
+  background: var(--bg-card) !important;
+  border-bottom: 1px solid var(--border-light) !important;
+  fill: var(--text-secondary) !important;
+  border-radius: 0px !important;
+}
+.react-flow__controls-button:hover {
+  background: var(--bg-hover) !important;
+  fill: var(--text-primary) !important;
+}
+.react-flow__edge-textbg {
+  fill: var(--bg-card) !important;
+  rx: 0px;
+}
+.react-flow__edge-text {
+  fill: var(--text-secondary) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+}

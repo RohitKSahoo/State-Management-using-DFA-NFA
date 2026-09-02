@@ -1,0 +1,28 @@
+{
+  "name": "@statelint/api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "db:push": "prisma db push",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "@statelint/automata": "*",
+    "cors": "^2.8.6",
+    "express": "^4.22.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.24",
+    "prisma": "^5.22.0",
+    "tsx": "^4.23.13",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.2"
+  }
+}
