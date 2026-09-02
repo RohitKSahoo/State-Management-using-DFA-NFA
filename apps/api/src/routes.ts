@@ -105,7 +105,7 @@ apiRouter.put('/workflows/:id', async (req, res) => {
     const workflowId = req.params.id;
 
     // Use transaction to replace states and transitions cleanly
-    const updated = await prisma.$transaction(async (tx) => {
+    const updated = await prisma.$transaction(async (tx: any) => {
       if (name) {
         await tx.workflow.update({
           where: { id: workflowId },
@@ -179,13 +179,13 @@ async function fetchWorkflowAutomaton(workflowId: string): Promise<Automaton | n
   if (!wf) return null;
 
   return {
-    states: wf.states.map(s => ({
+    states: wf.states.map((s: any) => ({
       id: s.id,
       name: s.name,
       isInitial: s.isInitial,
       isFinal: s.isFinal
     })),
-    transitions: wf.transitions.map(t => ({
+    transitions: wf.transitions.map((t: any) => ({
       id: t.id,
       fromStateId: t.fromStateId,
       toStateId: t.toStateId,
@@ -412,7 +412,7 @@ apiRouter.post('/workflows/:id/nfa-to-dfa', async (req, res) => {
 
     // Save converted DFA directly to DB
     const workflowId = req.params.id;
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: any) => {
       await tx.transition.deleteMany({ where: { workflowId } });
       await tx.workflowState.deleteMany({ where: { workflowId } });
 
@@ -467,7 +467,7 @@ apiRouter.post('/workflows/:id/minimize', async (req, res) => {
 
     // Save minimized DFA directly to DB
     const workflowId = req.params.id;
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: any) => {
       await tx.transition.deleteMany({ where: { workflowId } });
       await tx.workflowState.deleteMany({ where: { workflowId } });
 
