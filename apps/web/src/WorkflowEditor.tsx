@@ -192,9 +192,10 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
     }
   }
 
-  async function handleSimulate() {
+  async function handleSimulate(overrideSeq?: string) {
     await handleSave();
-    const events = simInput.split(',').map((s) => s.trim()).filter(Boolean);
+    const raw = typeof overrideSeq === 'string' ? overrideSeq : simInput;
+    const events = raw.split(',').map((s) => s.trim()).filter(Boolean);
     try {
       const res = await simulateWorkflow(workflowId, events);
       setSimulation(res);
@@ -645,49 +646,95 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
               </div>
             </div>
 
-            {/* Quick Event Chip Suggestions */}
+            {/* Quick Event Chip Suggestions & Full Sequence Presets */}
             {edges.length > 0 && (
-              <div style={{ marginBottom: '1rem' }}>
-                <div style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', marginBottom: '0.375rem' }}>
-                  AVAILABLE EVENT SUGGESTIONS (CLICK TO ADD):
+              <div style={{ marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                
+                {/* Full Sequence Presets */}
+                <div>
+                  <div style={{ fontSize: '0.6875rem', color: '#4ade80', fontFamily: 'var(--font-mono)', marginBottom: '0.375rem', fontWeight: 600 }}>
+                    ⚡ COMPLETE SEQUENCE PRESETS (CLICK TO RUN DIRECTLY):
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
+                    {(tests.length > 0 ? tests : [
+                      { type: 'ACCEPTANCE_PATH', events: Array.from(new Set(edges.map(e => e.label as string))).slice(0, 4) }
+                    ]).map((seq, idx) => {
+                      const eventStr = Array.isArray(seq.events) ? seq.events.join(', ') : '';
+                      if (!eventStr) return null;
+                      return (
+                        <button
+                          key={idx}
+                          onClick={() => {
+                            setSimInput(eventStr);
+                            handleSimulate(eventStr);
+                          }}
+                          style={{
+                            padding: '0.3rem 0.6rem',
+                            background: '#142918',
+                            border: '1px solid #22c55e',
+                            color: '#86efac',
+                            fontSize: '0.6875rem',
+                            fontFamily: 'var(--font-mono)',
+                            cursor: 'pointer',
+                            borderRadius: '0px',
+                            fontWeight: 600,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.25rem'
+                          }}
+                          title="Click to populate and execute full sequence directly"
+                        >
+                          <Play size={10} /> {eventStr}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
-                  {Array.from(new Set(edges.map((e) => (e.label as string) || '').filter(Boolean))).map((evt, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => {
-                        const trimmed = simInput.trim();
-                        if (!trimmed) {
-                          setSimInput(evt);
-                        } else if (trimmed.endsWith(',')) {
-                          setSimInput(`${trimmed} ${evt}`);
-                        } else {
-                          setSimInput(`${trimmed}, ${evt}`);
-                        }
-                      }}
-                      style={{
-                        padding: '0.2rem 0.5rem',
-                        background: '#18181b',
-                        border: '1px solid var(--border-light)',
-                        color: '#a1a1aa',
-                        fontSize: '0.6875rem',
-                        fontFamily: 'var(--font-mono)',
-                        cursor: 'pointer',
-                        borderRadius: '0px'
-                      }}
-                      onMouseEnter={(e) => {
-                        (e.target as HTMLElement).style.borderColor = 'var(--text-primary)';
-                        (e.target as HTMLElement).style.color = '#ffffff';
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.target as HTMLElement).style.borderColor = 'var(--border-light)';
-                        (e.target as HTMLElement).style.color = '#a1a1aa';
-                      }}
-                    >
-                      + {evt}
-                    </button>
-                  ))}
+
+                {/* Individual Event Chips */}
+                <div>
+                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', marginBottom: '0.375rem' }}>
+                    + INDIVIDUAL EVENT CHIPS:
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
+                    {Array.from(new Set(edges.map((e) => (e.label as string) || '').filter(Boolean))).map((evt, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => {
+                          const trimmed = simInput.trim();
+                          if (!trimmed) {
+                            setSimInput(evt);
+                          } else if (trimmed.endsWith(',')) {
+                            setSimInput(`${trimmed} ${evt}`);
+                          } else {
+                            setSimInput(`${trimmed}, ${evt}`);
+                          }
+                        }}
+                        style={{
+                          padding: '0.2rem 0.5rem',
+                          background: '#18181b',
+                          border: '1px solid var(--border-light)',
+                          color: '#a1a1aa',
+                          fontSize: '0.6875rem',
+                          fontFamily: 'var(--font-mono)',
+                          cursor: 'pointer',
+                          borderRadius: '0px'
+                        }}
+                        onMouseEnter={(e) => {
+                          (e.target as HTMLElement).style.borderColor = 'var(--text-primary)';
+                          (e.target as HTMLElement).style.color = '#ffffff';
+                        }}
+                        onMouseLeave={(e) => {
+                          (e.target as HTMLElement).style.borderColor = 'var(--border-light)';
+                          (e.target as HTMLElement).style.color = '#a1a1aa';
+                        }}
+                      >
+                        + {evt}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+
               </div>
             )}
 
