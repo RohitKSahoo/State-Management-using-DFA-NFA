@@ -200,7 +200,82 @@ async function seed() {
     }
   });
 
-  console.log('5 Complex demo workflows seeded successfully!');
+  // 6. Complex NFA Pattern Matcher (Text Regex Search - Simplifies massively on Powerset Conversion)
+  const regexNFAProj = await prisma.project.create({
+    data: {
+      name: 'NFA Regex Pattern Matcher (a*b+ & ε-Transitions)',
+      description: 'NFA with multiple spontaneous ε-transitions and non-deterministic event branching. Simplifies to a minimal canonical DFA.'
+    }
+  });
+
+  await prisma.workflow.create({
+    data: {
+      projectId: regexNFAProj.id,
+      name: 'NFA Pattern Matching Machine',
+      states: {
+        create: [
+          { id: 'nfa_q0', name: 'q0 (Start)', isInitial: true, isFinal: false, positionX: 50, positionY: 150 },
+          { id: 'nfa_q1', name: 'q1 (Choice A)', isInitial: false, isFinal: false, positionX: 250, positionY: 100 },
+          { id: 'nfa_q2', name: 'q2 (Choice B)', isInitial: false, isFinal: false, positionX: 250, positionY: 250 },
+          { id: 'nfa_q3', name: 'q3 (Loop A)', isInitial: false, isFinal: false, positionX: 450, positionY: 100 },
+          { id: 'nfa_q4', name: 'q4 (Loop B)', isInitial: false, isFinal: false, positionX: 450, positionY: 250 },
+          { id: 'nfa_q5', name: 'q5 (Sync)', isInitial: false, isFinal: false, positionX: 650, positionY: 175 },
+          { id: 'nfa_q6', name: 'q6 (Match Success)', isInitial: false, isFinal: true, positionX: 850, positionY: 175 }
+        ]
+      },
+      transitions: {
+        create: [
+          { id: 'nfat_1', fromStateId: 'nfa_q0', toStateId: 'nfa_q1', event: 'ε' }, // Epsilon transition
+          { id: 'nfat_2', fromStateId: 'nfa_q0', toStateId: 'nfa_q2', event: 'ε' }, // Epsilon transition
+          { id: 'nfat_3', fromStateId: 'nfa_q1', toStateId: 'nfa_q1', event: 'data_chunk' },
+          { id: 'nfat_4', fromStateId: 'nfa_q1', toStateId: 'nfa_q3', event: 'data_chunk' }, // NFA non-deterministic split on 'data_chunk'
+          { id: 'nfat_5', fromStateId: 'nfa_q2', toStateId: 'nfa_q4', event: 'data_chunk' },
+          { id: 'nfat_6', fromStateId: 'nfa_q3', toStateId: 'nfa_q5', event: 'process' },
+          { id: 'nfat_7', fromStateId: 'nfa_q4', toStateId: 'nfa_q5', event: 'process' },
+          { id: 'nfat_8', fromStateId: 'nfa_q5', toStateId: 'nfa_q6', event: 'commit' }
+        ]
+      }
+    }
+  });
+
+  // 7. Parallel Microservice Saga SAGA Workflow (NFA with redundant paths & state bloating)
+  const sagaNFAProj = await prisma.project.create({
+    data: {
+      name: 'Parallel Microservice Saga (NFA Powerset Simplifier)',
+      description: 'Distributed Saga workflow with overlapping parallel dispatch states. Converts to a clean deterministic DFA & collapses redundant states.'
+    }
+  });
+
+  await prisma.workflow.create({
+    data: {
+      projectId: sagaNFAProj.id,
+      name: 'Distributed Saga Orchestrator',
+      states: {
+        create: [
+          { id: 'sg_init', name: 'SAGA_INIT', isInitial: true, isFinal: false, positionX: 50, positionY: 180 },
+          { id: 'sg_fork_inv', name: 'DISPATCH_INVENTORY', isInitial: false, isFinal: false, positionX: 250, positionY: 100 },
+          { id: 'sg_fork_pay', name: 'DISPATCH_PAYMENT', isInitial: false, isFinal: false, positionX: 250, positionY: 260 },
+          { id: 'sg_inv_ok', name: 'INVENTORY_RESERVED', isInitial: false, isFinal: false, positionX: 500, positionY: 100 },
+          { id: 'sg_pay_ok', name: 'PAYMENT_CHARGED', isInitial: false, isFinal: false, positionX: 500, positionY: 260 },
+          { id: 'sg_join_ready', name: 'SAGA_JOIN_SYNC', isInitial: false, isFinal: false, positionX: 720, positionY: 180 },
+          { id: 'sg_complete', name: 'TRANSACTION_COMMITTED', isInitial: false, isFinal: true, positionX: 920, positionY: 180 }
+        ]
+      },
+      transitions: {
+        create: [
+          { id: 'sgt_1', fromStateId: 'sg_init', toStateId: 'sg_fork_inv', event: 'dispatch_event' },
+          { id: 'sgt_2', fromStateId: 'sg_init', toStateId: 'sg_fork_pay', event: 'dispatch_event' }, // NFA non-deterministic branch
+          { id: 'sgt_3', fromStateId: 'sg_fork_inv', toStateId: 'sg_inv_ok', event: 'ack' },
+          { id: 'sgt_4', fromStateId: 'sg_fork_pay', toStateId: 'sg_pay_ok', event: 'ack' },
+          { id: 'sgt_5', fromStateId: 'sg_inv_ok', toStateId: 'sg_join_ready', event: 'sync' },
+          { id: 'sgt_6', fromStateId: 'sg_pay_ok', toStateId: 'sg_join_ready', event: 'sync' },
+          { id: 'sgt_7', fromStateId: 'sg_join_ready', toStateId: 'sg_complete', event: 'finalize' }
+        ]
+      }
+    }
+  });
+
+  console.log('Seeding complete! 7 complex projects created.');
 }
 
 seed()
