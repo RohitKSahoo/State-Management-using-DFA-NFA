@@ -15,6 +15,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import type { Workflow, WorkflowState, Transition, AnalysisResult, SimulationResult, TestSequence } from './types';
 import { fetchWorkflow, saveWorkflow, analyzeWorkflow, simulateWorkflow, generateTests, convertNFAToDFA, minimizeDFA } from './api';
+import { CustomStateNode } from './CustomNode';
 import { ArrowLeft, Save, Play, Search, Plus, Trash2, CheckCircle2, AlertCircle, RefreshCw, FileText, HelpCircle, Zap, Minimize2, X, PanelRightOpen, PanelRightClose, ChevronDown, Edit2, ArrowRight } from 'lucide-react';
 
 interface EditorProps {
