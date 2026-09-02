@@ -15,8 +15,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import type { Workflow, WorkflowState, Transition, AnalysisResult, SimulationResult, TestSequence } from './types';
 import { fetchWorkflow, saveWorkflow, analyzeWorkflow, simulateWorkflow, generateTests, convertNFAToDFA, minimizeDFA } from './api';
-import { CustomStateNode } from './CustomNode';
-import { ArrowLeft, Save, Play, Search, Plus, Trash2, CheckCircle2, AlertCircle, RefreshCw, FileText, HelpCircle, Zap, Minimize2, X, PanelRightOpen, PanelRightClose } from 'lucide-react';
+import { ArrowLeft, Save, Play, Search, Plus, Trash2, CheckCircle2, AlertCircle, RefreshCw, FileText, HelpCircle, Zap, Minimize2, X, PanelRightOpen, PanelRightClose, ChevronDown, Edit2, ArrowRight } from 'lucide-react';
 
 interface EditorProps {
   workflowId: string;
@@ -29,6 +28,7 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
   const [edges, setEdges] = useState<Edge[]>([]);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [showAddPresetMenu, setShowAddPresetMenu] = useState(false);
 
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [simulation, setSimulation] = useState<SimulationResult | null>(null);
@@ -112,16 +112,20 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
   );
 
   function handleAddNode(presetType?: 'NEUTRAL' | 'START' | 'FINAL' | 'TRANSACTION' | 'PROCESSING' | 'EXCEPTION') {
-    let defaultPrefix = presetType || 'STATE';
-    if (presetType === 'START') defaultPrefix = 'START';
-    if (presetType === 'FINAL') defaultPrefix = 'DONE';
-    if (presetType === 'TRANSACTION') defaultPrefix = 'PAYMENT';
-    if (presetType === 'PROCESSING') defaultPrefix = 'PROCESSING';
-    if (presetType === 'EXCEPTION') defaultPrefix = 'ERROR';
+    setShowAddPresetMenu(false);
 
-    const name = prompt(`Enter state name for ${presetType || 'NEW'} state:`, `${defaultPrefix}_${nodes.length + 1}`);
-    if (!name) return;
+    let defaultName = 'NEW_STATE';
+    if (presetType === 'START') defaultName = 'START_STATE';
+    if (presetType === 'FINAL') defaultName = 'FINAL_STATE';
+    if (presetType === 'TRANSACTION') defaultName = 'PAYMENT_STATE';
+    if (presetType === 'PROCESSING') defaultName = 'PROCESSING_STATE';
+    if (presetType === 'EXCEPTION') defaultName = 'ERROR_STATE';
 
+    const rawInput = prompt(`Enter name for ${presetType || 'NEW'} state node:`, defaultName);
+    if (!rawInput) return;
+    const name = rawInput.trim().toUpperCase();
+
+    // Preserve initial / final properties if user selected START or FINAL presets
     const isInitial = presetType === 'START' || (nodes.length === 0 && presetType !== 'NEUTRAL');
     const isFinal = presetType === 'FINAL';
 
@@ -129,9 +133,28 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
       id: `state-${Date.now()}`,
       type: 'customState',
       position: { x: 250 + Math.random() * 120, y: 150 + Math.random() * 120 },
-      data: { label: name.trim().toUpperCase(), isInitial, isFinal }
+      data: { label: name, isInitial, isFinal, category: presetType || 'NEUTRAL' }
     };
     setNodes((nds) => [...nds, newNode]);
+  }
+
+  function handleRenameNode(nodeId: string, currentLabel: string) {
+    const newName = prompt('Rename State Node:', currentLabel);
+    if (!newName || newName.trim() === '') return;
+    const formatted = newName.trim().toUpperCase();
+
+    setNodes((nds) =>
+      nds.map((n) => {
+        if (n.id !== nodeId) return n;
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            label: formatted
+          }
+        };
+      })
+    );
   }
 
   function handleToggleInitial(nodeId: string) {
@@ -574,14 +597,50 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
           {/* Floating Canvas Controls & BUBBLE */}
           <div style={{ position: 'absolute', top: 16, left: 16, display: 'flex', gap: '0.5rem', zIndex: 10 }}>
             <div style={{ position: 'relative' }}>
-              <button
-                onClick={handleAddNode}
-                onMouseEnter={() => showHelpMode && setActiveTooltip('addNode')}
-                onMouseLeave={() => setActiveTooltip(null)}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', padding: '0.5rem 1rem', background: 'var(--text-primary)', color: 'var(--bg-main)', border: 'none', borderRadius: '0px', fontWeight: 600, fontSize: '0.8125rem', fontFamily: 'var(--font-display)', cursor: 'pointer' }}
-              >
-                <Plus size={14} /> ADD STATE NODE
-              </button>
+              <div style={{ display: 'flex' }}>
+                <button
+                  onClick={() => handleAddNode('NEUTRAL')}
+                  onMouseEnter={() => showHelpMode && setActiveTooltip('addNode')}
+                  onMouseLeave={() => setActiveTooltip(null)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', padding: '0.5rem 0.875rem', background: 'var(--text-primary)', color: 'var(--bg-main)', border: 'none', borderRadius: '0px', fontWeight: 600, fontSize: '0.8125rem', fontFamily: 'var(--font-display)', cursor: 'pointer' }}
+                >
+                  <Plus size={14} /> ADD STATE NODE
+                </button>
+                <button
+                  onClick={() => setShowAddPresetMenu(!showAddPresetMenu)}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.5rem 0.5rem', background: '#3f3f46', color: '#ffffff', border: 'none', borderLeft: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer' }}
+                  title="Choose State Category Preset"
+                >
+                  <ChevronDown size={14} />
+                </button>
+              </div>
+
+              {/* Preset Selection Dropdown Popup */}
+              {showAddPresetMenu && (
+                <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: '6px', width: '220px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-light)', boxShadow: '0 10px 30px rgba(0,0,0,0.8)', zIndex: 100, display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ padding: '0.5rem 0.75rem', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border-light)', fontWeight: 600 }}>
+                    SELECT CATEGORY PRESET:
+                  </div>
+                  <button onClick={() => handleAddNode('NEUTRAL')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', background: 'none', border: 'none', color: 'var(--text-primary)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', cursor: 'pointer', textAlign: 'left' }}>
+                    <span style={{ color: '#a1a1aa' }}>■</span> Neutral / Standard
+                  </button>
+                  <button onClick={() => handleAddNode('START')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', background: 'none', border: 'none', color: '#4ade80', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', cursor: 'pointer', textAlign: 'left' }}>
+                    <span style={{ color: '#22c55e' }}>■</span> Start ($q_0$)
+                  </button>
+                  <button onClick={() => handleAddNode('FINAL')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', background: 'none', border: 'none', color: '#f87171', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', cursor: 'pointer', textAlign: 'left' }}>
+                    <span style={{ color: '#ef4444' }}>■</span> Final ($F$)
+                  </button>
+                  <button onClick={() => handleAddNode('TRANSACTION')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', background: 'none', border: 'none', color: '#60a5fa', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', cursor: 'pointer', textAlign: 'left' }}>
+                    <span style={{ color: '#3b82f6' }}>■</span> Transaction
+                  </button>
+                  <button onClick={() => handleAddNode('PROCESSING')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', background: 'none', border: 'none', color: '#c084fc', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', cursor: 'pointer', textAlign: 'left' }}>
+                    <span style={{ color: '#a855f7' }}>■</span> Processing
+                  </button>
+                  <button onClick={() => handleAddNode('EXCEPTION')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', background: 'none', border: 'none', color: '#fdba74', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', cursor: 'pointer', textAlign: 'left' }}>
+                    <span style={{ color: '#fb923c' }}>■</span> Exception
+                  </button>
+                </div>
+              )}
 
               {showHelpMode && activeTooltip === 'addNode' && (
                 <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: '10px', width: '220px', background: '#121212', border: '1px solid var(--text-primary)', padding: '0.625rem 0.875rem', color: '#ffffff', fontSize: '0.75rem', lineHeight: 1.4, zIndex: 100, boxShadow: '0 8px 24px rgba(0,0,0,0.8)' }}>
@@ -620,38 +679,23 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
             {/* Node Inspector */}
             <section>
               <h3 style={{ margin: '0 0 1rem 0', fontSize: '0.875rem', fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)', letterSpacing: '0.1em' }}>NODE INSPECTOR</h3>
-              
-              {/* Quick Add State Category Presets */}
-              <div style={{ marginBottom: '1.25rem', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-light)', padding: '0.875rem' }}>
-                <div style={{ fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)', marginBottom: '0.625rem', fontWeight: 600 }}>
-                  + ADD STATE CATEGORY PRESETS:
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.375rem' }}>
-                  <button onClick={() => handleAddNode('NEUTRAL')} style={{ padding: '0.35rem 0.5rem', background: '#18181b', border: '1px solid #3f3f46', color: '#a1a1aa', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', cursor: 'pointer', textAlign: 'left' }}>
-                    ■ Neutral / Standard
-                  </button>
-                  <button onClick={() => handleAddNode('START')} style={{ padding: '0.35rem 0.5rem', background: '#142918', border: '1px solid #22c55e', color: '#4ade80', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', cursor: 'pointer', textAlign: 'left' }}>
-                    ■ Start ($q_0$)
-                  </button>
-                  <button onClick={() => handleAddNode('FINAL')} style={{ padding: '0.35rem 0.5rem', background: '#2d1212', border: '1px solid #ef4444', color: '#f87171', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', cursor: 'pointer', textAlign: 'left' }}>
-                    ■ Final ($F$)
-                  </button>
-                  <button onClick={() => handleAddNode('TRANSACTION')} style={{ padding: '0.35rem 0.5rem', background: '#121e36', border: '1px solid #3b82f6', color: '#60a5fa', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', cursor: 'pointer', textAlign: 'left' }}>
-                    ■ Transaction
-                  </button>
-                  <button onClick={() => handleAddNode('PROCESSING')} style={{ padding: '0.35rem 0.5rem', background: '#251236', border: '1px solid #a855f7', color: '#c084fc', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', cursor: 'pointer', textAlign: 'left' }}>
-                    ■ Processing
-                  </button>
-                  <button onClick={() => handleAddNode('EXCEPTION')} style={{ padding: '0.35rem 0.5rem', background: '#361c12', border: '1px solid #fb923c', color: '#fdba74', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', cursor: 'pointer', textAlign: 'left' }}>
-                    ■ Exception
-                  </button>
-                </div>
-              </div>
 
               {selectedNode ? (
                 <div style={{ backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-light)', padding: '1rem', borderRadius: '0px' }}>
-                  <div style={{ fontWeight: 600, fontSize: '1rem', marginBottom: '1rem', fontFamily: 'var(--font-display)' }}>{selectedNode.data.label as string}</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                    <div style={{ fontWeight: 600, fontSize: '1rem', fontFamily: 'var(--font-display)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      {selectedNode.data.label as string}
+                    </div>
+                    <button
+                      onClick={() => handleRenameNode(selectedNode.id, selectedNode.data.label as string)}
+                      style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', background: 'var(--bg-card)', border: '1px solid var(--border-light)', color: 'var(--text-secondary)', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', cursor: 'pointer' }}
+                      title="Rename State Node"
+                    >
+                      <Edit2 size={12} /> RENAME
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer' }}>
                       <input type="checkbox" checked={!!selectedNode.data.isInitial} onChange={() => handleToggleInitial(selectedNode.id)} />
                       Set as Initial State ($q_0$)
@@ -661,6 +705,62 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
                       Set as Final / Accepting State ($F$)
                     </label>
                   </div>
+
+                  {/* Connected Transitions / Neighbors Section */}
+                  <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '1rem', marginBottom: '1rem' }}>
+                    <div style={{ fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)', marginBottom: '0.75rem', letterSpacing: '0.05em', fontWeight: 600 }}>
+                      CONNECTED TRANSITIONS ({edges.filter(e => e.source === selectedNode.id || e.target === selectedNode.id).length})
+                    </div>
+
+                    {/* Outgoing Transitions */}
+                    <div style={{ marginBottom: '0.75rem' }}>
+                      <div style={{ fontSize: '0.6875rem', color: '#60a5fa', fontWeight: 600, marginBottom: '0.375rem', fontFamily: 'var(--font-mono)' }}>
+                        OUTGOING (TRIP OUT) →
+                      </div>
+                      {edges.filter(e => e.source === selectedNode.id).length === 0 ? (
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontStyle: 'italic', paddingLeft: '0.5rem' }}>None (Dead end state)</div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                          {edges.filter(e => e.source === selectedNode.id).map(e => {
+                            const targetNode = nodes.find(n => n.id === e.target);
+                            const targetLabel = targetNode ? (targetNode.data.label as string) : e.target;
+                            return (
+                              <div key={e.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.375rem 0.5rem', background: 'var(--bg-card)', border: '1px solid var(--border-light)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
+                                <span style={{ color: '#4ade80', fontWeight: 600 }}>on: { (e.label as string) || 'ε' }</span>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-primary)' }}>
+                                  <ArrowRight size={12} style={{ color: '#60a5fa' }} /> {targetLabel}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Incoming Transitions */}
+                    <div>
+                      <div style={{ fontSize: '0.6875rem', color: '#c084fc', fontWeight: 600, marginBottom: '0.375rem', fontFamily: 'var(--font-mono)' }}>
+                        INCOMING (TRIP IN) ←
+                      </div>
+                      {edges.filter(e => e.target === selectedNode.id).length === 0 ? (
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontStyle: 'italic', paddingLeft: '0.5rem' }}>None (Unreachable from graph)</div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                          {edges.filter(e => e.target === selectedNode.id).map(e => {
+                            const sourceNode = nodes.find(n => n.id === e.source);
+                            const sourceLabel = sourceNode ? (sourceNode.data.label as string) : e.source;
+                            return (
+                              <div key={e.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.375rem 0.5rem', background: 'var(--bg-card)', border: '1px solid var(--border-light)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
+                                <span style={{ color: 'var(--text-primary)' }}>from: {sourceLabel}</span>
+                                <span style={{ color: '#4ade80', fontWeight: 600 }}>on: { (e.label as string) || 'ε' }</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   <button
                     onClick={() => handleDeleteNode(selectedNode.id)}
                     style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', width: '100%', justifyContent: 'center', padding: '0.5rem', background: '#3b1212', color: '#ff6b6b', border: 'none', borderRadius: '0px', fontSize: '0.8125rem', cursor: 'pointer' }}

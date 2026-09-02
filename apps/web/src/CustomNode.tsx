@@ -7,7 +7,8 @@ export const CustomStateNode: React.FC<{ data: any; selected?: boolean }> = ({ d
   const isHighlighted = data.isHighlighted;
   const isCurrentSim = data.isCurrentSim;
 
-  // Determine state category color coding based on type & keywords
+  // Determine state category color coding based on data.category or label keywords
+  const category = data.category;
   const labelUpper = (data.label || '').toUpperCase();
   
   let borderColor = '#3f3f46'; // Neutral dark zinc border default
@@ -30,15 +31,15 @@ export const CustomStateNode: React.FC<{ data: any; selected?: boolean }> = ({ d
     accentColor = '#ef4444';
     borderWidth = '2px';
     shadowStyle = '0 0 12px rgba(239, 68, 68, 0.35)';
-  } else if (labelUpper.includes('PAY') || labelUpper.includes('CART') || labelUpper.includes('CHECKOUT')) {
+  } else if (category === 'TRANSACTION' || labelUpper.includes('PAY') || labelUpper.includes('CART') || labelUpper.includes('CHECKOUT')) {
     borderColor = '#3b82f6'; // Blue for Transaction / Action
     accentColor = '#60a5fa';
     borderWidth = '1px';
-  } else if (labelUpper.includes('CANCEL') || labelUpper.includes('ERROR') || labelUpper.includes('FAILED') || labelUpper.includes('LOCKED')) {
+  } else if (category === 'EXCEPTION' || labelUpper.includes('CANCEL') || labelUpper.includes('ERROR') || labelUpper.includes('FAILED') || labelUpper.includes('LOCKED')) {
     borderColor = '#f97316'; // Orange for Exception / Error Trap
     accentColor = '#fb923c';
     borderWidth = '1px';
-  } else if (labelUpper.includes('LOAD') || labelUpper.includes('PREPARING') || labelUpper.includes('PENDING') || labelUpper.includes('WAIT')) {
+  } else if (category === 'PROCESSING' || labelUpper.includes('LOAD') || labelUpper.includes('PREPARING') || labelUpper.includes('PENDING') || labelUpper.includes('WAIT')) {
     borderColor = '#a855f7'; // Purple for Async / Processing
     accentColor = '#c084fc';
     borderWidth = '1px';
