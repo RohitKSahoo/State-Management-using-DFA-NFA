@@ -3,6 +3,8 @@ export interface StateNode {
     name: string;
     isInitial?: boolean;
     isFinal?: boolean;
+    positionX?: number;
+    positionY?: number;
 }
 export interface TransitionEdge {
     id: string;
