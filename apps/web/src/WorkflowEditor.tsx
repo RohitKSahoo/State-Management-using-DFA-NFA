@@ -200,40 +200,53 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
       const res = await simulateWorkflow(workflowId, events);
       setSimulation(res);
 
-      const pathNodeIds = res.path || [];
-      if (pathNodeIds.length > 0) {
-        // Step-by-step animated trajectory playback
-        for (let i = 0; i < pathNodeIds.length; i++) {
-          const currentNodeId = pathNodeIds[i];
-          const prevNodeId = i > 0 ? pathNodeIds[i - 1] : null;
+      const steps = res.path || [];
+      const initialNodeId = nodes.find(n => n.data?.isInitial)?.id || (steps.length > 0 ? steps[0].fromStateId : null);
 
-          setNodes((nds) =>
-            nds.map((n) => ({
-              ...n,
-              data: {
-                ...n.data,
-                isCurrentSim: n.id === currentNodeId
+      if (initialNodeId) {
+        // Highlight initial state node first
+        setNodes((nds) =>
+          nds.map((n) => ({
+            ...n,
+            data: {
+              ...n.data,
+              isCurrentSim: n.id === initialNodeId
+            }
+          }))
+        );
+        await new Promise((r) => setTimeout(r, 600));
+      }
+
+      // Step-by-step trajectory playback across path steps
+      for (let i = 0; i < steps.length; i++) {
+        const step = steps[i];
+
+        setNodes((nds) =>
+          nds.map((n) => ({
+            ...n,
+            data: {
+              ...n.data,
+              isCurrentSim: n.id === step.toStateId
+            }
+          }))
+        );
+
+        setEdges((eds) =>
+          eds.map((e) => {
+            const isTraversed = (e.id === step.transitionId) || (e.source === step.fromStateId && e.target === step.toStateId);
+            return {
+              ...e,
+              animated: true,
+              style: {
+                stroke: isTraversed ? '#4ade80' : 'var(--text-secondary)',
+                strokeWidth: isTraversed ? 3 : 1.5
               }
-            }))
-          );
+            };
+          })
+        );
 
-          setEdges((eds) =>
-            eds.map((e) => {
-              const isTraversed = prevNodeId && e.source === prevNodeId && e.target === currentNodeId;
-              return {
-                ...e,
-                animated: true,
-                style: {
-                  stroke: isTraversed ? '#4ade80' : 'var(--text-secondary)',
-                  strokeWidth: isTraversed ? 3 : 1.5
-                }
-              };
-            })
-          );
-
-          // 700ms delay per state transition step for clear visual animation
-          await new Promise((r) => setTimeout(r, 700));
-        }
+        // 600ms delay per step transition
+        await new Promise((r) => setTimeout(r, 600));
       }
     } catch (err) {
       alert('Simulation failed');
