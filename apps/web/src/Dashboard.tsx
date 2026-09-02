@@ -88,7 +88,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenWorkflow, onBackToLa
   );
 
   return (
-    <div style={{ position: 'relative', minHeight: '100vh', backgroundColor: 'var(--bg-main)', padding: '4rem 2rem', fontFamily: 'var(--font-body)', color: 'var(--text-primary)', overflow: 'hidden' }}>
+    <div className="dashboard-container" style={{ position: 'relative', minHeight: '100vh', backgroundColor: 'var(--bg-main)', padding: '4rem 2rem', fontFamily: 'var(--font-body)', color: 'var(--text-primary)', overflow: 'hidden' }}>
       
       {/* Interactive Mouse Grid Canvas */}
       <InteractiveGridBackground />
@@ -96,7 +96,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenWorkflow, onBackToLa
       <div style={{ position: 'relative', zIndex: 1, maxWidth: '960px', margin: '0 auto' }}>
         
         {/* Header */}
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4rem', borderBottom: '1px solid var(--border-light)', paddingBottom: '2rem' }}>
+        <header className="responsive-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4rem', borderBottom: '1px solid var(--border-light)', paddingBottom: '2rem' }}>
           <div>
             <button
               onClick={onBackToLanding}
@@ -112,7 +112,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenWorkflow, onBackToLa
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <div className="responsive-btn-group" style={{ display: 'flex', gap: '0.75rem' }}>
             <button
               onClick={() => setShowAIModal(true)}
               style={{
@@ -187,7 +187,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenWorkflow, onBackToLa
                   </div>
                 </div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
                   {userProjects.map((p) => {
                     const defaultWf = p.workflows && p.workflows.length > 0 ? p.workflows[0] : null;
                     return (
@@ -241,7 +241,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenWorkflow, onBackToLa
                 PRE-DEFINED AUTOMATA BENCHMARKS ({exampleProjects.length})
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+              <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
                 {exampleProjects.map((p) => {
                   const defaultWf = p.workflows && p.workflows.length > 0 ? p.workflows[0] : null;
                   return (
@@ -287,7 +287,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenWorkflow, onBackToLa
         {/* AI Prompt Generator Modal */}
         {showAIModal && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-            <form onSubmit={handleGenerateAI} style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--text-primary)', padding: '2.5rem', borderRadius: '0px', width: '540px', maxWidth: '90vw' }}>
+            <form className="responsive-modal" onSubmit={handleGenerateAI} style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--text-primary)', padding: '2.5rem', borderRadius: '0px', width: '540px', maxWidth: '90vw' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
                 <Sparkles size={20} style={{ color: 'var(--text-primary)' }} />
                 <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600, fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>AI APP STATE GENERATOR</h2>
@@ -342,7 +342,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenWorkflow, onBackToLa
         {/* Regular Manual New Project Modal */}
         {showModal && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-            <form onSubmit={handleCreateProject} style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--text-primary)', padding: '2.5rem', borderRadius: '0px', width: '420px', maxWidth: '90vw' }}>
+            <form className="responsive-modal" onSubmit={handleCreateProject} style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--text-primary)', padding: '2.5rem', borderRadius: '0px', width: '420px', maxWidth: '90vw' }}>
               <h2 style={{ margin: '0 0 1.5rem 0', fontSize: '1.25rem', fontWeight: 600, fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>INITIALIZE PROJECT</h2>
               
               <div style={{ marginBottom: '1.25rem' }}>

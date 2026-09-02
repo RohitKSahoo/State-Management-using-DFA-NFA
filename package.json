@@ -11,7 +11,7 @@
     "dev": "npx concurrently \"npm run dev --workspace=@statelint/api\" \"npm run dev --workspace=@statelint/web\"",
     "seed": "npx tsx apps/api/prisma/seed.ts",
     "test": "npm test --workspaces --if-present",
-    "build": "npm run build --workspaces --if-present"
+    "build": "npx prisma db push --schema=apps/api/prisma/schema.prisma && npm run build --workspaces --if-present"
   },
   "devDependencies": {
     "typescript": "^5.9.3",

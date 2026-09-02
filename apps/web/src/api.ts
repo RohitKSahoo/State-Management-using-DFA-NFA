@@ -1,6 +1,6 @@
 import type { Project, Workflow, AnalysisResult, SimulationResult, TestSequence } from './types';
 
-const API_BASE = 'http://localhost:3001/api';
+const API_BASE = '/api';
 
 export async function fetchProjects(): Promise<Project[]> {
   const res = await fetch(`${API_BASE}/projects`);
