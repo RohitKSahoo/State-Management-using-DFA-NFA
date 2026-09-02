@@ -577,6 +577,16 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
                 </div>
               )}
             </div>
+
+            {/* Toggle Sidebar Button */}
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', padding: '0.5rem 0.75rem', background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-light)', borderRadius: '0px', fontWeight: 600, fontSize: '0.8125rem', fontFamily: 'var(--font-mono)', cursor: 'pointer' }}
+              title={isSidebarOpen ? 'Hide Inspector Sidebar' : 'Show Inspector Sidebar'}
+            >
+              {isSidebarOpen ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}
+              {isSidebarOpen ? 'HIDE PANEL' : 'SHOW PANEL'}
+            </button>
           </div>
 
           {/* Floating State Color Legend Badge */}
@@ -591,7 +601,8 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
         </div>
 
         {/* Right Inspector & Audit Panel */}
-        <div style={{ width: '380px', borderLeft: '1px solid var(--border-light)', backgroundColor: 'var(--bg-card)', overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+        {isSidebarOpen && (
+          <div style={{ width: '380px', borderLeft: '1px solid var(--border-light)', backgroundColor: 'var(--bg-card)', overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
           
           {/* Node Inspector */}
           <section>
@@ -626,25 +637,30 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
             <h3 style={{ margin: '0 0 1rem 0', fontSize: '0.875rem', fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)', letterSpacing: '0.1em' }}>STATIC AUTOMATA AUDIT</h3>
             {analysis ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', fontWeight: 600, color: analysis.valid ? '#4ade80' : '#f87171' }}>
-                  {analysis.valid ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
-                  {analysis.valid ? 'Automaton Deterministic & Valid' : 'DFA Violations Detected'}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', fontWeight: 600, color: analysis.isValid ? '#4ade80' : '#f87171' }}>
+                  {analysis.isValid ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+                  {analysis.isValid ? 'Automaton Deterministic & Valid' : 'DFA Violations Detected'}
                 </div>
 
-                {analysis.errors.length > 0 && (
-                  <div style={{ background: '#261212', border: '1px solid #5c1d1d', padding: '0.75rem', borderRadius: '0px' }}>
-                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#f87171', marginBottom: '0.375rem' }}>ERRORS:</div>
-                    {analysis.errors.map((e, idx) => (
-                      <div key={idx} style={{ fontSize: '0.8125rem', color: '#fca5a5', marginBottom: '0.25rem' }}>• {e}</div>
-                    ))}
-                  </div>
-                )}
-
-                {analysis.warnings.length > 0 && (
-                  <div style={{ background: '#262012', border: '1px solid #5c4b1d', padding: '0.75rem', borderRadius: '0px' }}>
-                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#fbbf24', marginBottom: '0.375rem' }}>WARNINGS:</div>
-                    {analysis.warnings.map((w, idx) => (
-                      <div key={idx} style={{ fontSize: '0.8125rem', color: '#fde68a', marginBottom: '0.25rem' }}>• {w}</div>
+                {Array.isArray(analysis.issues) && analysis.issues.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {analysis.issues.map((issue, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          background: issue.severity === 'ERROR' ? '#261212' : '#262012',
+                          border: `1px solid ${issue.severity === 'ERROR' ? '#5c1d1d' : '#5c4b1d'}`,
+                          padding: '0.625rem 0.75rem',
+                          borderRadius: '0px'
+                        }}
+                      >
+                        <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: issue.severity === 'ERROR' ? '#f87171' : '#fbbf24', marginBottom: '0.25rem', fontFamily: 'var(--font-mono)' }}>
+                          [{issue.type}] {issue.severity}
+                        </div>
+                        <div style={{ fontSize: '0.8125rem', color: issue.severity === 'ERROR' ? '#fca5a5' : '#fde68a' }}>
+                          {issue.message}
+                        </div>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -812,6 +828,7 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
           )}
 
         </div>
+        )}
       </div>
 
       {/* CUSTOM IN-APP ALGORITHM RESULT POPUP MODAL */}
