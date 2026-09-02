@@ -21,15 +21,141 @@ apiRouter.post('/projects', async (req, res) => {
 
 apiRouter.get('/projects', async (_req, res) => {
   try {
-    const projects = await prisma.project.findMany({
+    let projects = await prisma.project.findMany({
       include: { workflows: true },
       orderBy: { updatedAt: 'desc' }
     });
+
+    if (projects.length === 0) {
+      // Auto-populate default benchmark projects if DB is clean/empty
+      await seedDefaultBenchmarks();
+      projects = await prisma.project.findMany({
+        include: { workflows: true },
+        orderBy: { updatedAt: 'desc' }
+      });
+    }
+
     res.json(projects);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });
+
+async function seedDefaultBenchmarks() {
+  try {
+    const ecomProj = await prisma.project.create({
+      data: {
+        name: 'E-Commerce Platform',
+        description: 'Standard multi-stage checkout & payment retry state machine'
+      }
+    });
+
+    await prisma.workflow.create({
+      data: {
+        projectId: ecomProj.id,
+        name: 'Checkout Flow',
+        states: {
+          create: [
+            { id: 'ec_login', name: 'LOGIN', isInitial: true, isFinal: false, positionX: 50, positionY: 150 },
+            { id: 'ec_home', name: 'HOME', isInitial: false, isFinal: false, positionX: 250, positionY: 150 },
+            { id: 'ec_cart', name: 'CART', isInitial: false, isFinal: false, positionX: 450, positionY: 150 },
+            { id: 'ec_checkout', name: 'CHECKOUT', isInitial: false, isFinal: false, positionX: 650, positionY: 150 },
+            { id: 'ec_payment', name: 'PAYMENT', isInitial: false, isFinal: false, positionX: 850, positionY: 150 },
+            { id: 'ec_failed', name: 'FAILED', isInitial: false, isFinal: true, positionX: 850, positionY: 320 },
+            { id: 'ec_confirmed', name: 'ORDER_CONFIRMED', isInitial: false, isFinal: true, positionX: 1050, positionY: 150 }
+          ]
+        },
+        transitions: {
+          create: [
+            { id: 'ect_1', fromStateId: 'ec_login', toStateId: 'ec_home', event: 'auth_success' },
+            { id: 'ect_2', fromStateId: 'ec_home', toStateId: 'ec_cart', event: 'add_item' },
+            { id: 'ect_3', fromStateId: 'ec_cart', toStateId: 'ec_checkout', event: 'proceed_checkout' },
+            { id: 'ect_4', fromStateId: 'ec_checkout', toStateId: 'ec_payment', event: 'submit_payment' },
+            { id: 'ect_5', fromStateId: 'ec_payment', toStateId: 'ec_confirmed', event: 'pay_success' },
+            { id: 'ect_6', fromStateId: 'ec_payment', toStateId: 'ec_failed', event: 'pay_error' }
+          ]
+        }
+      }
+    });
+
+    const bankProj = await prisma.project.create({
+      data: {
+        name: 'Digital Banking Portal',
+        description: 'Standard fund transfer state machine with 2FA OTP & anti-fraud verification'
+      }
+    });
+
+    await prisma.workflow.create({
+      data: {
+        projectId: bankProj.id,
+        name: 'Fund Transfer Flow',
+        states: {
+          create: [
+            { id: 'bk_login', name: 'LOGIN', isInitial: true, isFinal: false, positionX: 50, positionY: 150 },
+            { id: 'bk_dash', name: 'DASHBOARD', isInitial: false, isFinal: false, positionX: 250, positionY: 150 },
+            { id: 'bk_account', name: 'SELECT_ACCOUNT', isInitial: false, isFinal: false, positionX: 450, positionY: 150 },
+            { id: 'bk_transfer', name: 'TRANSFER_FORM', isInitial: false, isFinal: false, positionX: 650, positionY: 150 },
+            { id: 'bk_fraud_check', name: 'FRAUD_RISK_AUDIT', isInitial: false, isFinal: false, positionX: 650, positionY: 320 },
+            { id: 'bk_confirm', name: 'CONFIRM_OTP', isInitial: false, isFinal: false, positionX: 850, positionY: 150 },
+            { id: 'bk_success', name: 'TRANSFER_COMPLETE', isInitial: false, isFinal: true, positionX: 1050, positionY: 150 },
+            { id: 'bk_blocked', name: 'ACCOUNT_BLOCKED', isInitial: false, isFinal: true, positionX: 850, positionY: 320 }
+          ]
+        },
+        transitions: {
+          create: [
+            { id: 'bkt_1', fromStateId: 'bk_login', toStateId: 'bk_dash', event: 'login_2fa' },
+            { id: 'bkt_2', fromStateId: 'bk_dash', toStateId: 'bk_account', event: 'click_transfer' },
+            { id: 'bkt_3', fromStateId: 'bk_account', toStateId: 'bk_transfer', event: 'select_target' },
+            { id: 'bkt_4', fromStateId: 'bk_transfer', toStateId: 'bk_fraud_check', event: 'submit_high_value' },
+            { id: 'bkt_5', fromStateId: 'bk_fraud_check', toStateId: 'bk_confirm', event: 'risk_approved' },
+            { id: 'bkt_6', fromStateId: 'bk_fraud_check', toStateId: 'bk_blocked', event: 'risk_flagged' },
+            { id: 'bkt_7', fromStateId: 'bk_transfer', toStateId: 'bk_confirm', event: 'submit_normal' },
+            { id: 'bkt_8', fromStateId: 'bk_confirm', toStateId: 'bk_success', event: 'authorize_otp' }
+          ]
+        }
+      }
+    });
+
+    const regexNFAProj = await prisma.project.create({
+      data: {
+        name: 'NFA Regex Pattern Matcher (a*b+ & ε-Transitions)',
+        description: 'NFA with spontaneous ε-transitions & non-deterministic branching. Simplifies to a minimal canonical DFA.'
+      }
+    });
+
+    await prisma.workflow.create({
+      data: {
+        projectId: regexNFAProj.id,
+        name: 'NFA Pattern Matching Machine',
+        states: {
+          create: [
+            { id: 'nfa_q0', name: 'q0 (Start)', isInitial: true, isFinal: false, positionX: 50, positionY: 150 },
+            { id: 'nfa_q1', name: 'q1 (Choice A)', isInitial: false, isFinal: false, positionX: 250, positionY: 100 },
+            { id: 'nfa_q2', name: 'q2 (Choice B)', isInitial: false, isFinal: false, positionX: 250, positionY: 250 },
+            { id: 'nfa_q3', name: 'q3 (Loop A)', isInitial: false, isFinal: false, positionX: 450, positionY: 100 },
+            { id: 'nfa_q4', name: 'q4 (Loop B)', isInitial: false, isFinal: false, positionX: 450, positionY: 250 },
+            { id: 'nfa_q5', name: 'q5 (Sync)', isInitial: false, isFinal: false, positionX: 650, positionY: 175 },
+            { id: 'nfa_q6', name: 'q6 (Match Success)', isInitial: false, isFinal: true, positionX: 850, positionY: 175 }
+          ]
+        },
+        transitions: {
+          create: [
+            { id: 'nfat_1', fromStateId: 'nfa_q0', toStateId: 'nfa_q1', event: 'ε' },
+            { id: 'nfat_2', fromStateId: 'nfa_q0', toStateId: 'nfa_q2', event: 'ε' },
+            { id: 'nfat_3', fromStateId: 'nfa_q1', toStateId: 'nfa_q1', event: 'data_chunk' },
+            { id: 'nfat_4', fromStateId: 'nfa_q1', toStateId: 'nfa_q3', event: 'data_chunk' },
+            { id: 'nfat_5', fromStateId: 'nfa_q2', toStateId: 'nfa_q4', event: 'data_chunk' },
+            { id: 'nfat_6', fromStateId: 'nfa_q3', toStateId: 'nfa_q5', event: 'process' },
+            { id: 'nfat_7', fromStateId: 'nfa_q4', toStateId: 'nfa_q5', event: 'process' },
+            { id: 'nfat_8', fromStateId: 'nfa_q5', toStateId: 'nfa_q6', event: 'commit' }
+          ]
+        }
+      }
+    });
+  } catch (e) {
+    console.error('Auto-seed error:', e);
+  }
+}
 
 apiRouter.get('/projects/:id', async (req, res) => {
   try {
