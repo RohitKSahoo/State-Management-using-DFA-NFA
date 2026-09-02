@@ -29,7 +29,38 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
   const [edges, setEdges] = useState<Edge[]>([]);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [sidebarWidth, setSidebarWidth] = useState(450); // Increased default width
+  const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const [showAddPresetMenu, setShowAddPresetMenu] = useState(false);
+
+  // Resize handler for side panel
+  const handleMouseDownResize = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizingSidebar(true);
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizingSidebar) return;
+      const newWidth = window.innerWidth - e.clientX;
+      if (newWidth >= 300 && newWidth <= 800) {
+        setSidebarWidth(newWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingSidebar(false);
+    };
+
+    if (isResizingSidebar) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizingSidebar]);
 
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [simulation, setSimulation] = useState<SimulationResult | null>(null);
@@ -675,7 +706,23 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
 
         {/* Right Inspector & Audit Panel */}
         {isSidebarOpen && (
-          <div style={{ width: '380px', borderLeft: '1px solid var(--border-light)', backgroundColor: 'var(--bg-card)', overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          <div style={{ width: `${sidebarWidth}px`, position: 'relative', borderLeft: '1px solid var(--border-light)', backgroundColor: 'var(--bg-card)', overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '2rem', flexShrink: 0 }}>
+            {/* Drag Resize Handle */}
+            <div
+              onMouseDown={handleMouseDownResize}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '6px',
+                height: '100%',
+                cursor: 'col-resize',
+                zIndex: 50,
+                backgroundColor: isResizingSidebar ? '#3b82f6' : 'transparent',
+                transition: 'background-color 0.15s ease'
+              }}
+              title="Click & drag to resize side panel"
+            />
           
             {/* Node Inspector */}
             <section>
@@ -716,7 +763,7 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
                     {/* Outgoing Transitions */}
                     <div style={{ marginBottom: '0.75rem' }}>
                       <div style={{ fontSize: '0.6875rem', color: '#60a5fa', fontWeight: 600, marginBottom: '0.375rem', fontFamily: 'var(--font-mono)' }}>
-                        OUTGOING (TRIP OUT) →
+                        OUTGOING →
                       </div>
                       {edges.filter(e => e.source === selectedNode.id).length === 0 ? (
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontStyle: 'italic', paddingLeft: '0.5rem' }}>None (Dead end state)</div>
@@ -741,7 +788,7 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
                     {/* Incoming Transitions */}
                     <div>
                       <div style={{ fontSize: '0.6875rem', color: '#c084fc', fontWeight: 600, marginBottom: '0.375rem', fontFamily: 'var(--font-mono)' }}>
-                        INCOMING (TRIP IN) ←
+                        INCOMING ←
                       </div>
                       {edges.filter(e => e.target === selectedNode.id).length === 0 ? (
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontStyle: 'italic', paddingLeft: '0.5rem' }}>None (Unreachable from graph)</div>
