@@ -784,8 +784,13 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
                     Reason: {simulation.failureReason}
                   </div>
                 )}
-                <div style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
-                  Path: {simulation.path && simulation.path.length > 0 ? simulation.path.map((step) => step.fromStateId).concat(simulation.currentStateId).join(' → ') : (simulation.currentStateId || 'Initial State')}
+                <div style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', wordBreak: 'break-all', lineHeight: 1.5 }}>
+                  Path: {simulation.path && simulation.path.length > 0 
+                    ? simulation.path.map((step) => {
+                        const stateObj = nodes.find((n) => n.id === step.fromStateId);
+                        return stateObj?.data?.label || step.fromStateId;
+                      }).concat(nodes.find((n) => n.id === simulation.currentStateId)?.data?.label || simulation.currentStateId).join(' → ')
+                    : (nodes.find((n) => n.id === simulation.currentStateId)?.data?.label || simulation.currentStateId || 'Initial State')}
                 </div>
               </div>
             )}
