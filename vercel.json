@@ -1,6 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "npm run build --workspace=@statelint/web",
+  "installCommand": "npm install --include=dev",
+  "buildCommand": "npm run build",
   "outputDirectory": "apps/web/dist",
   "rewrites": [
     {
