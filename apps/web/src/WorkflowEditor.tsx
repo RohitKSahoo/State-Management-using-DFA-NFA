@@ -200,16 +200,40 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
       const res = await simulateWorkflow(workflowId, events);
       setSimulation(res);
 
-      if (res.currentStateId) {
-        setNodes((nds) =>
-          nds.map((n) => ({
-            ...n,
-            data: {
-              ...n.data,
-              isCurrentSim: n.id === res.currentStateId
-            }
-          }))
-        );
+      const pathNodeIds = res.path || [];
+      if (pathNodeIds.length > 0) {
+        // Step-by-step animated trajectory playback
+        for (let i = 0; i < pathNodeIds.length; i++) {
+          const currentNodeId = pathNodeIds[i];
+          const prevNodeId = i > 0 ? pathNodeIds[i - 1] : null;
+
+          setNodes((nds) =>
+            nds.map((n) => ({
+              ...n,
+              data: {
+                ...n.data,
+                isCurrentSim: n.id === currentNodeId
+              }
+            }))
+          );
+
+          setEdges((eds) =>
+            eds.map((e) => {
+              const isTraversed = prevNodeId && e.source === prevNodeId && e.target === currentNodeId;
+              return {
+                ...e,
+                animated: true,
+                style: {
+                  stroke: isTraversed ? '#4ade80' : 'var(--text-secondary)',
+                  strokeWidth: isTraversed ? 3 : 1.5
+                }
+              };
+            })
+          );
+
+          // 500ms delay per state transition step
+          await new Promise((r) => setTimeout(r, 500));
+        }
       }
     } catch (err) {
       alert('Simulation failed');
@@ -653,7 +677,7 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
                 {/* Full Sequence Presets */}
                 <div>
                   <div style={{ fontSize: '0.6875rem', color: '#4ade80', fontFamily: 'var(--font-mono)', marginBottom: '0.375rem', fontWeight: 600 }}>
-                    ⚡ COMPLETE SEQUENCE PRESETS (CLICK TO RUN DIRECTLY):
+                    ⚡ SEQUENCE PRESETS (CLICK TO RUN DIRECTLY):
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
                     {(tests.length > 0 ? tests : [
@@ -682,7 +706,7 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
                             alignItems: 'center',
                             gap: '0.25rem'
                           }}
-                          title="Click to populate and execute full sequence directly"
+                          title="Click to populate and execute sequence directly"
                         >
                           <Play size={10} /> {eventStr}
                         </button>
@@ -694,7 +718,7 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
                 {/* Individual Event Chips */}
                 <div>
                   <div style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', marginBottom: '0.375rem' }}>
-                    + INDIVIDUAL EVENT CHIPS:
+                    + EVENT STATES:
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
                     {Array.from(new Set(edges.map((e) => (e.label as string) || '').filter(Boolean))).map((evt, idx) => (
