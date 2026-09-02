@@ -677,7 +677,7 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
                 {/* Full Sequence Presets */}
                 <div>
                   <div style={{ fontSize: '0.6875rem', color: '#4ade80', fontFamily: 'var(--font-mono)', marginBottom: '0.375rem', fontWeight: 600 }}>
-                    ⚡ SEQUENCE PRESETS (CLICK TO RUN DIRECTLY):
+                    SEQUENCE PRESETS:
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
                     {(tests.length > 0 ? tests : [
@@ -690,7 +690,6 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
                           key={idx}
                           onClick={() => {
                             setSimInput(eventStr);
-                            handleSimulate(eventStr);
                           }}
                           style={{
                             padding: '0.3rem 0.6rem',
@@ -706,9 +705,9 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
                             alignItems: 'center',
                             gap: '0.25rem'
                           }}
-                          title="Click to populate and execute sequence directly"
+                          title="Click to select sequence into simulator input field"
                         >
-                          <Play size={10} /> {eventStr}
+                          + {eventStr}
                         </button>
                       );
                     })}
