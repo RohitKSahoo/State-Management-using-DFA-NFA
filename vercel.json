@@ -1,24 +1,20 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "apps/api/src/server.ts",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "apps/web/package.json",
-      "use": "@vercel/static-build",
-      "config": { "distDir": "dist" }
+  "buildCommand": "npm run build",
+  "outputDirectory": "apps/web/dist",
+  "functions": {
+    "apps/api/src/server.ts": {
+      "includeFiles": "packages/automata/**"
     }
-  ],
-  "routes": [
+  },
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "apps/api/src/server.ts"
+      "source": "/api/(.*)",
+      "destination": "/apps/api/src/server.ts"
     },
     {
-      "src": "/(.*)",
-      "dest": "apps/web/$1"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
