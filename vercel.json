@@ -1,16 +1,11 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
+  "buildCommand": "npm run build --workspace=@statelint/web",
   "outputDirectory": "apps/web/dist",
-  "functions": {
-    "apps/api/src/server.ts": {
-      "includeFiles": "packages/automata/**"
-    }
-  },
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/apps/api/src/server.ts"
+      "destination": "/api/index.ts"
     },
     {
       "source": "/(.*)",
