@@ -8,7 +8,7 @@
     "apps/*"
   ],
   "scripts": {
-    "dev": "npm run dev --workspaces --if-present",
+    "dev": "npx concurrently \"npm run dev --workspace=@statelint/api\" \"npm run dev --workspace=@statelint/web\"",
     "seed": "npx tsx apps/api/prisma/seed.ts",
     "test": "npm test --workspaces --if-present",
     "build": "npm run build --workspaces --if-present"
