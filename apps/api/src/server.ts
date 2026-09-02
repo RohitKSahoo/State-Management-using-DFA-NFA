@@ -8,6 +8,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/api', apiRouter);
+app.use('/', apiRouter);
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'statelint-api' });
