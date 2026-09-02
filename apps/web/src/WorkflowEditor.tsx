@@ -578,17 +578,33 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
                 </div>
               )}
             </div>
-
-            {/* Toggle Sidebar Button */}
-            <button
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', padding: '0.5rem 0.75rem', background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-light)', borderRadius: '0px', fontWeight: 600, fontSize: '0.8125rem', fontFamily: 'var(--font-mono)', cursor: 'pointer' }}
-              title={isSidebarOpen ? 'Hide Inspector Sidebar' : 'Show Inspector Sidebar'}
-            >
-              {isSidebarOpen ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}
-              {isSidebarOpen ? 'HIDE PANEL' : 'SHOW PANEL'}
-            </button>
           </div>
+
+          {/* Floating Edge Toggle Panel Icon Button */}
+          <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            style={{
+              position: 'absolute',
+              top: 16,
+              right: isSidebarOpen ? 366 : 16,
+              zIndex: 20,
+              width: '32px',
+              height: '32px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: '#18181b',
+              border: '1px solid var(--border-light)',
+              color: 'var(--text-primary)',
+              cursor: 'pointer',
+              borderRadius: '0px',
+              transition: 'right 0.2s ease',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
+            }}
+            title={isSidebarOpen ? 'Collapse Panel' : 'Expand Panel'}
+          >
+            {isSidebarOpen ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}
+          </button>
 
           {/* Floating State Color Legend Badge */}
           <div style={{ position: 'absolute', bottom: 16, left: 16, backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-light)', padding: '0.75rem 1rem', borderRadius: '0px', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', zIndex: 10, display: 'flex', gap: '1rem', alignItems: 'center' }}>
