@@ -111,14 +111,25 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
     []
   );
 
-  function handleAddNode() {
-    const name = prompt('Enter state name (e.g., IDLE, PAYMENT, DONE):');
+  function handleAddNode(presetType?: 'NEUTRAL' | 'START' | 'FINAL' | 'TRANSACTION' | 'PROCESSING' | 'EXCEPTION') {
+    let defaultPrefix = presetType || 'STATE';
+    if (presetType === 'START') defaultPrefix = 'START';
+    if (presetType === 'FINAL') defaultPrefix = 'DONE';
+    if (presetType === 'TRANSACTION') defaultPrefix = 'PAYMENT';
+    if (presetType === 'PROCESSING') defaultPrefix = 'PROCESSING';
+    if (presetType === 'EXCEPTION') defaultPrefix = 'ERROR';
+
+    const name = prompt(`Enter state name for ${presetType || 'NEW'} state:`, `${defaultPrefix}_${nodes.length + 1}`);
     if (!name) return;
+
+    const isInitial = presetType === 'START' || (nodes.length === 0 && presetType !== 'NEUTRAL');
+    const isFinal = presetType === 'FINAL';
+
     const newNode: Node = {
       id: `state-${Date.now()}`,
       type: 'customState',
-      position: { x: 250 + Math.random() * 100, y: 150 + Math.random() * 100 },
-      data: { label: name.trim().toUpperCase(), isInitial: nodes.length === 0, isFinal: false }
+      position: { x: 250 + Math.random() * 120, y: 150 + Math.random() * 120 },
+      data: { label: name.trim().toUpperCase(), isInitial, isFinal }
     };
     setNodes((nds) => [...nds, newNode]);
   }
@@ -578,37 +589,22 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
                 </div>
               )}
             </div>
-          </div>
 
-          {/* Floating Edge Toggle Panel Icon Button */}
-          <button
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            style={{
-              position: 'absolute',
-              top: 16,
-              right: isSidebarOpen ? 366 : 16,
-              zIndex: 20,
-              width: '32px',
-              height: '32px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: '#18181b',
-              border: '1px solid var(--border-light)',
-              color: 'var(--text-primary)',
-              cursor: 'pointer',
-              borderRadius: '0px',
-              transition: 'right 0.2s ease',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
-            }}
-            title={isSidebarOpen ? 'Collapse Panel' : 'Expand Panel'}
-          >
-            {isSidebarOpen ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}
-          </button>
+            {/* Toggle Sidebar Button */}
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', padding: '0.5rem 0.75rem', background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-light)', borderRadius: '0px', fontWeight: 600, fontSize: '0.8125rem', fontFamily: 'var(--font-mono)', cursor: 'pointer' }}
+              title={isSidebarOpen ? 'Hide Inspector Sidebar' : 'Show Inspector Sidebar'}
+            >
+              {isSidebarOpen ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}
+              {isSidebarOpen ? 'HIDE PANEL' : 'SHOW PANEL'}
+            </button>
+          </div>
 
           {/* Floating State Color Legend Badge */}
           <div style={{ position: 'absolute', bottom: 16, left: 16, backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-light)', padding: '0.75rem 1rem', borderRadius: '0px', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', zIndex: 10, display: 'flex', gap: '1rem', alignItems: 'center' }}>
             <span style={{ color: 'var(--text-tertiary)' }}>LEGEND:</span>
+            <span style={{ color: '#3f3f46', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>■ Neutral / Standard</span>
             <span style={{ color: '#22c55e', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>■ Start ($q_0$)</span>
             <span style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>■ Final ($F$)</span>
             <span style={{ color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>■ Transaction</span>
@@ -621,33 +617,61 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
         {isSidebarOpen && (
           <div style={{ width: '380px', borderLeft: '1px solid var(--border-light)', backgroundColor: 'var(--bg-card)', overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
           
-          {/* Node Inspector */}
-          <section>
-            <h3 style={{ margin: '0 0 1rem 0', fontSize: '0.875rem', fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)', letterSpacing: '0.1em' }}>NODE INSPECTOR</h3>
-            {selectedNode ? (
-              <div style={{ backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-light)', padding: '1rem', borderRadius: '0px' }}>
-                <div style={{ fontWeight: 600, fontSize: '1rem', marginBottom: '1rem', fontFamily: 'var(--font-display)' }}>{selectedNode.data.label as string}</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer' }}>
-                    <input type="checkbox" checked={!!selectedNode.data.isInitial} onChange={() => handleToggleInitial(selectedNode.id)} />
-                    Set as Initial State (q0)
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer' }}>
-                    <input type="checkbox" checked={!!selectedNode.data.isFinal} onChange={() => handleToggleFinal(selectedNode.id)} />
-                    Set as Final / Accepting State (F)
-                  </label>
+            {/* Node Inspector */}
+            <section>
+              <h3 style={{ margin: '0 0 1rem 0', fontSize: '0.875rem', fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)', letterSpacing: '0.1em' }}>NODE INSPECTOR</h3>
+              
+              {/* Quick Add State Category Presets */}
+              <div style={{ marginBottom: '1.25rem', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-light)', padding: '0.875rem' }}>
+                <div style={{ fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)', marginBottom: '0.625rem', fontWeight: 600 }}>
+                  + ADD STATE CATEGORY PRESETS:
                 </div>
-                <button
-                  onClick={() => handleDeleteNode(selectedNode.id)}
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', width: '100%', justifyContent: 'center', padding: '0.5rem', background: '#3b1212', color: '#ff6b6b', border: 'none', borderRadius: '0px', fontSize: '0.8125rem', cursor: 'pointer' }}
-                >
-                  <Trash2 size={14} /> DELETE STATE
-                </button>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.375rem' }}>
+                  <button onClick={() => handleAddNode('NEUTRAL')} style={{ padding: '0.35rem 0.5rem', background: '#18181b', border: '1px solid #3f3f46', color: '#a1a1aa', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', cursor: 'pointer', textAlign: 'left' }}>
+                    ■ Neutral / Standard
+                  </button>
+                  <button onClick={() => handleAddNode('START')} style={{ padding: '0.35rem 0.5rem', background: '#142918', border: '1px solid #22c55e', color: '#4ade80', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', cursor: 'pointer', textAlign: 'left' }}>
+                    ■ Start ($q_0$)
+                  </button>
+                  <button onClick={() => handleAddNode('FINAL')} style={{ padding: '0.35rem 0.5rem', background: '#2d1212', border: '1px solid #ef4444', color: '#f87171', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', cursor: 'pointer', textAlign: 'left' }}>
+                    ■ Final ($F$)
+                  </button>
+                  <button onClick={() => handleAddNode('TRANSACTION')} style={{ padding: '0.35rem 0.5rem', background: '#121e36', border: '1px solid #3b82f6', color: '#60a5fa', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', cursor: 'pointer', textAlign: 'left' }}>
+                    ■ Transaction
+                  </button>
+                  <button onClick={() => handleAddNode('PROCESSING')} style={{ padding: '0.35rem 0.5rem', background: '#251236', border: '1px solid #a855f7', color: '#c084fc', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', cursor: 'pointer', textAlign: 'left' }}>
+                    ■ Processing
+                  </button>
+                  <button onClick={() => handleAddNode('EXCEPTION')} style={{ padding: '0.35rem 0.5rem', background: '#361c12', border: '1px solid #fb923c', color: '#fdba74', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', cursor: 'pointer', textAlign: 'left' }}>
+                    ■ Exception
+                  </button>
+                </div>
               </div>
-            ) : (
-              <div style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem', fontStyle: 'italic' }}>Click any state node in the graph to inspect properties.</div>
-            )}
-          </section>
+
+              {selectedNode ? (
+                <div style={{ backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-light)', padding: '1rem', borderRadius: '0px' }}>
+                  <div style={{ fontWeight: 600, fontSize: '1rem', marginBottom: '1rem', fontFamily: 'var(--font-display)' }}>{selectedNode.data.label as string}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={!!selectedNode.data.isInitial} onChange={() => handleToggleInitial(selectedNode.id)} />
+                      Set as Initial State ($q_0$)
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={!!selectedNode.data.isFinal} onChange={() => handleToggleFinal(selectedNode.id)} />
+                      Set as Final / Accepting State ($F$)
+                    </label>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteNode(selectedNode.id)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', width: '100%', justifyContent: 'center', padding: '0.5rem', background: '#3b1212', color: '#ff6b6b', border: 'none', borderRadius: '0px', fontSize: '0.8125rem', cursor: 'pointer' }}
+                  >
+                    <Trash2 size={14} /> DELETE STATE
+                  </button>
+                </div>
+              ) : (
+                <div style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem', fontStyle: 'italic' }}>Click any state node in the graph to inspect properties.</div>
+              )}
+            </section>
 
           {/* Analysis Report */}
           <section style={{ borderTop: '1px solid var(--border-light)', paddingTop: '1.5rem' }}>
