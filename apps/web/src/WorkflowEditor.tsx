@@ -16,7 +16,7 @@ import '@xyflow/react/dist/style.css';
 import type { Workflow, WorkflowState, Transition, AnalysisResult, SimulationResult, TestSequence } from './types';
 import { fetchWorkflow, saveWorkflow, analyzeWorkflow, simulateWorkflow, generateTests, convertNFAToDFA, minimizeDFA } from './api';
 import { CustomStateNode } from './CustomNode';
-import { ArrowLeft, Save, Play, Search, Plus, Trash2, CheckCircle2, AlertCircle, RefreshCw, FileText, HelpCircle, Zap, Minimize2, X } from 'lucide-react';
+import { ArrowLeft, Save, Play, Search, Plus, Trash2, CheckCircle2, AlertCircle, RefreshCw, FileText, HelpCircle, Zap, Minimize2, X, PanelRightOpen, PanelRightClose } from 'lucide-react';
 
 interface EditorProps {
   workflowId: string;
@@ -28,6 +28,7 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [simulation, setSimulation] = useState<SimulationResult | null>(null);
