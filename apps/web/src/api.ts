@@ -1,6 +1,6 @@
 import type { Project, Workflow, AnalysisResult, SimulationResult, TestSequence } from './types';
 
-const API_BASE = 'http://localhost:3001/api';
+const API_BASE = '/api';
 
 export async function fetchProjects(): Promise<Project[]> {
   const res = await fetch(`${API_BASE}/projects`);
@@ -71,17 +71,70 @@ export async function simulateWorkflow(id: string, events: string[]): Promise<Si
   return res.json();
 }
 
+export interface StateDef {
+  id: string;
+  name: string;
+  isInitial: boolean;
+  isFinal: boolean;
+  description?: string;
+  reason?: string;
+}
+
+export interface TransitionDef {
+  from: string;
+  to: string;
+  event: string;
+}
+
+export interface WorkflowAIPreview {
+  projectName: string;
+  coreStates: StateDef[];
+  coreTransitions: TransitionDef[];
+  edgeCaseStates: StateDef[];
+  edgeCaseTransitions: TransitionDef[];
+}
+
 export async function generateTests(id: string): Promise<{ count: number; tests: TestSequence[] }> {
   const res = await fetch(`${API_BASE}/workflows/${id}/tests/generate`, { method: 'POST' });
   if (!res.ok) throw new Error('Failed to generate tests');
   return res.json();
 }
 
-export async function generateAIWorkflow(prompt: string): Promise<Workflow> {
-  const res = await fetch(`${API_BASE}/generate-ai-workflow`, {
+export async function enhanceAIPrompt(prompt: string): Promise<string> {
+  const res = await fetch(`${API_BASE}/ai/enhance-prompt`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ prompt })
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to enhance prompt');
+  }
+  const data = await res.json();
+  return data.enhancedPrompt;
+}
+
+export async function previewAIWorkflow(prompt: string): Promise<WorkflowAIPreview> {
+  const res = await fetch(`${API_BASE}/ai/preview-workflow`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt })
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to generate workflow preview');
+  }
+  return res.json();
+}
+
+export async function generateAIWorkflow(
+  prompt: string,
+  customPayload?: { projectName: string; states: StateDef[]; transitions: TransitionDef[] }
+): Promise<Workflow> {
+  const res = await fetch(`${API_BASE}/generate-ai-workflow`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(customPayload ? { prompt, ...customPayload } : { prompt })
   });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));

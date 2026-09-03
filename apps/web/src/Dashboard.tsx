@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import type { Project } from './types';
-import { fetchProjects, createProject, deleteProject, createWorkflow, generateAIWorkflow } from './api';
-import { Plus, Trash2, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { fetchProjects, createProject, deleteProject, createWorkflow, generateAIWorkflow, enhanceAIPrompt, previewAIWorkflow } from './api';
+import type { Workflow, Project, WorkflowAIPreview } from './api';
+import { Plus, Trash2, ArrowRight, Sparkles, Loader2, Wand2, CheckSquare, Square, ChevronRight } from 'lucide-react';
 import { InteractiveGridBackground } from './InteractiveGrid';
 
 interface DashboardProps {
@@ -9,24 +9,29 @@ interface DashboardProps {
   onBackToLanding: () => void;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ onOpenWorkflow, onBackToLanding }) => {
+export function Dashboard({ onOpenWorkflow, onBackToLanding }: DashboardProps) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  
+  // AI Modal States
+  const [showAIModal, setShowAIModal] = useState(false);
+  const [aiStep, setAiStep] = useState<1 | 2>(1);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [enhancingPrompt, setEnhancingPrompt] = useState(false);
+  const [loadingPreview, setLoadingPreview] = useState(false);
+  const [buildingWorkflow, setBuildingWorkflow] = useState(false);
+  const [aiPreview, setAiPreview] = useState<WorkflowAIPreview | null>(null);
+  const [selectedEdgeCases, setSelectedEdgeCases] = useState<Record<string, boolean>>({});
+
   const [newProjectName, setNewProjectName] = useState('');
   const [newProjectDesc, setNewProjectDesc] = useState('');
-  const [showModal, setShowModal] = useState(false);
-
-  // AI Prompt Modal States
-  const [showAIModal, setShowAIModal] = useState(false);
-  const [aiPrompt, setAiPrompt] = useState('');
-  const [generatingAI, setGeneratingAI] = useState(false);
 
   useEffect(() => {
     loadProjects();
   }, []);
 
   async function loadProjects() {
-    setLoading(true);
     try {
       const data = await fetchProjects();
       setProjects(data);
@@ -41,8 +46,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenWorkflow, onBackToLa
     e.preventDefault();
     if (!newProjectName.trim()) return;
     try {
-      const p = await createProject(newProjectName.trim(), newProjectDesc.trim());
-      const wf = await createWorkflow(p.id, 'Main Workflow');
+      const p = await createProject(newProjectName, newProjectDesc);
+      const wf = await createWorkflow(p.id, `${p.name} Workflow`);
       setShowModal(false);
       setNewProjectName('');
       setNewProjectDesc('');
@@ -52,20 +57,91 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenWorkflow, onBackToLa
     }
   }
 
-  async function handleGenerateAI(e: React.FormEvent) {
+  async function handleEnhancePrompt() {
+    if (!aiPrompt.trim()) return;
+    setEnhancingPrompt(true);
+    try {
+      const enhanced = await enhanceAIPrompt(aiPrompt.trim());
+      setAiPrompt(enhanced);
+    } catch (err: any) {
+      alert(err.message || 'Failed to improve prompt');
+    } finally {
+      setEnhancingPrompt(false);
+    }
+  }
+
+  async function handleGeneratePreview(e: React.FormEvent) {
     e.preventDefault();
     if (!aiPrompt.trim()) return;
-    setGeneratingAI(true);
+    setLoadingPreview(true);
     try {
-      const createdWorkflow = await generateAIWorkflow(aiPrompt.trim());
+      const preview = await previewAIWorkflow(aiPrompt.trim());
+      setAiPreview(preview);
+      // Default select all edge cases
+      const edgeCaseMap: Record<string, boolean> = {};
+      preview.edgeCaseStates.forEach((s) => {
+        edgeCaseMap[s.id] = true;
+      });
+      setSelectedEdgeCases(edgeCaseMap);
+      setAiStep(2);
+    } catch (err: any) {
+      alert(err.message || 'Failed to generate preview');
+    } finally {
+      setLoadingPreview(false);
+    }
+  }
+
+  async function handleBuildCustomAIWorkflow() {
+    if (!aiPreview) return;
+    setBuildingWorkflow(true);
+    try {
+      const activeEdgeStates = aiPreview.edgeCaseStates.filter((s) => selectedEdgeCases[s.id]);
+      const activeEdgeStateIds = new Set(activeEdgeStates.map((s) => s.id));
+
+      const allStates = [...aiPreview.coreStates, ...activeEdgeStates];
+      
+      const activeTransitions = [
+        ...aiPreview.coreTransitions,
+        ...aiPreview.edgeCaseTransitions.filter(
+          (t) => (!t.from.startsWith('e') || activeEdgeStateIds.has(t.from)) &&
+                 (!t.to.startsWith('e') || activeEdgeStateIds.has(t.to))
+        )
+      ];
+
+      const createdWorkflow = await generateAIWorkflow(aiPrompt.trim(), {
+        projectName: aiPreview.projectName,
+        states: allStates,
+        transitions: activeTransitions
+      });
+
       setShowAIModal(false);
-      setAiPrompt('');
+      resetAIModalState();
       onOpenWorkflow(createdWorkflow.id);
     } catch (err: any) {
-      alert(err.message || 'Failed to generate AI workflow');
+      alert(err.message || 'Failed to build workflow');
     } finally {
-      setGeneratingAI(false);
+      setBuildingWorkflow(false);
     }
+  }
+
+  function resetAIModalState() {
+    setAiStep(1);
+    setAiPrompt('');
+    setAiPreview(null);
+    setSelectedEdgeCases({});
+  }
+
+  function toggleEdgeCase(id: string) {
+    setSelectedEdgeCases((prev) => ({ ...prev, [id]: !prev[id] }));
+  }
+
+  function toggleAllEdgeCases(selectAll: boolean) {
+    if (!aiPreview) return;
+    const edgeCaseMap: Record<string, boolean> = {};
+    aiPreview.edgeCaseStates.forEach((s) => {
+      edgeCaseMap[s.id] = selectAll;
+    });
+    setSelectedEdgeCases(edgeCaseMap);
   }
 
   async function handleDeleteProject(id: string, e: React.MouseEvent) {
@@ -79,7 +155,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenWorkflow, onBackToLa
     }
   }
 
-  const exampleKeywords = ['e-commerce', 'digital banking', 'problematic sample'];
+  const exampleKeywords = [
+    'nfa regex',
+    'saga',
+    'payment gateway',
+    'rideshare dispatch',
+    'iot smart home',
+    'e-commerce',
+    'digital banking'
+  ];
   const exampleProjects = projects.filter((p) =>
     exampleKeywords.some((k) => p.name.toLowerCase().includes(k))
   );
@@ -88,7 +172,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenWorkflow, onBackToLa
   );
 
   return (
-    <div style={{ position: 'relative', minHeight: '100vh', backgroundColor: 'var(--bg-main)', padding: '4rem 2rem', fontFamily: 'var(--font-body)', color: 'var(--text-primary)', overflow: 'hidden' }}>
+    <div className="dashboard-container" style={{ position: 'relative', minHeight: '100vh', backgroundColor: 'var(--bg-main)', padding: '4rem 2rem', fontFamily: 'var(--font-body)', color: 'var(--text-primary)', overflow: 'hidden' }}>
       
       {/* Interactive Mouse Grid Canvas */}
       <InteractiveGridBackground />
@@ -96,7 +180,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenWorkflow, onBackToLa
       <div style={{ position: 'relative', zIndex: 1, maxWidth: '960px', margin: '0 auto' }}>
         
         {/* Header */}
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4rem', borderBottom: '1px solid var(--border-light)', paddingBottom: '2rem' }}>
+        <header className="responsive-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4rem', borderBottom: '1px solid var(--border-light)', paddingBottom: '2rem' }}>
           <div>
             <button
               onClick={onBackToLanding}
@@ -112,9 +196,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenWorkflow, onBackToLa
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <div className="responsive-btn-group" style={{ display: 'flex', gap: '0.75rem' }}>
             <button
-              onClick={() => setShowAIModal(true)}
+              onClick={() => { resetAIModalState(); setShowAIModal(true); }}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -173,7 +257,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenWorkflow, onBackToLa
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: '0 0 1.25rem 0' }}>No custom projects created yet.</p>
                   <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
                     <button
-                      onClick={() => setShowAIModal(true)}
+                      onClick={() => { resetAIModalState(); setShowAIModal(true); }}
                       style={{ background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--text-primary)', padding: '0.5rem 1.25rem', borderRadius: '0px', fontWeight: 600, cursor: 'pointer', fontSize: '0.8125rem', fontFamily: 'var(--font-display)' }}
                     >
                       ✨ Generate with AI
@@ -187,7 +271,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenWorkflow, onBackToLa
                   </div>
                 </div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
                   {userProjects.map((p) => {
                     const defaultWf = p.workflows && p.workflows.length > 0 ? p.workflows[0] : null;
                     return (
@@ -241,7 +325,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenWorkflow, onBackToLa
                 PRE-DEFINED AUTOMATA BENCHMARKS ({exampleProjects.length})
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+              <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
                 {exampleProjects.map((p) => {
                   const defaultWf = p.workflows && p.workflows.length > 0 ? p.workflows[0] : null;
                   return (
@@ -286,63 +370,218 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenWorkflow, onBackToLa
 
         {/* AI Prompt Generator Modal */}
         {showAIModal && (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-            <form onSubmit={handleGenerateAI} style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--text-primary)', padding: '2.5rem', borderRadius: '0px', width: '540px', maxWidth: '90vw' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
-                <Sparkles size={20} style={{ color: 'var(--text-primary)' }} />
-                <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600, fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>AI APP STATE GENERATOR</h2>
-              </div>
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '1rem' }}>
+            <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--text-primary)', padding: '2.5rem', borderRadius: '0px', width: '620px', maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto' }}>
               
-              <div style={{ marginBottom: '1.75rem' }}>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)', marginBottom: '0.5rem', letterSpacing: '0.1em' }}>
-                  DESCRIBE YOUR APPLICATION FLOW
-                </label>
-                <textarea
-                  required
-                  value={aiPrompt}
-                  onChange={(e) => setAiPrompt(e.target.value)}
-                  placeholder="e.g. An audio player app with loading track, playing, pause, stop, and reset actions..."
-                  rows={4}
-                  style={{ width: '100%', padding: '0.75rem 0.875rem', background: 'var(--bg-main)', border: '1px solid var(--border-light)', borderRadius: '0px', color: 'var(--text-primary)', fontSize: '0.875rem', fontFamily: 'var(--font-body)', lineHeight: 1.5 }}
-                />
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-                  💡 Try: "Food delivery app with menu, cart, payment, kitchen prep, driver and delivery steps"
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-light)', paddingBottom: '1.25rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Sparkles size={20} style={{ color: 'var(--text-primary)' }} />
+                  <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600, fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>
+                    AI STATE MACHINE GENERATOR
+                  </h2>
+                </div>
+                <div style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)' }}>
+                  STEP {aiStep} OF 2
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
-                <button
-                  type="button"
-                  onClick={() => setShowAIModal(false)}
-                  disabled={generatingAI}
-                  style={{ padding: '0.625rem 1.25rem', border: '1px solid var(--border-light)', background: 'transparent', color: 'var(--text-secondary)', borderRadius: '0px', cursor: 'pointer', fontSize: '0.8125rem', fontFamily: 'var(--font-display)' }}
-                >
-                  CANCEL
-                </button>
-                <button
-                  type="submit"
-                  disabled={generatingAI}
-                  style={{ padding: '0.625rem 1.5rem', background: 'var(--text-primary)', color: 'var(--bg-main)', border: 'none', borderRadius: '0px', fontWeight: 600, cursor: 'pointer', fontSize: '0.8125rem', fontFamily: 'var(--font-display)', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
-                >
-                  {generatingAI ? (
-                    <>
-                      <Loader2 size={16} className="animate-spin" /> GENERATING GRAPH...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles size={14} /> GENERATE & OPEN
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
+              {aiStep === 1 ? (
+                <form onSubmit={handleGeneratePreview}>
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                      <label style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)', letterSpacing: '0.1em' }}>
+                        DESCRIBE YOUR APP IDEA
+                      </label>
+                      
+                      <button
+                        type="button"
+                        onClick={handleEnhancePrompt}
+                        disabled={enhancingPrompt || !aiPrompt.trim()}
+                        style={{
+                          background: 'transparent',
+                          border: '1px solid var(--border-light)',
+                          color: 'var(--text-primary)',
+                          padding: '0.25rem 0.625rem',
+                          fontSize: '0.75rem',
+                          fontFamily: 'var(--font-mono)',
+                          cursor: aiPrompt.trim() ? 'pointer' : 'not-allowed',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.375rem',
+                          opacity: aiPrompt.trim() ? 1 : 0.5
+                        }}
+                      >
+                        {enhancingPrompt ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
+                        {enhancingPrompt ? 'IMPROVING IDEA...' : '✨ IMPROVE IDEA WITH AI'}
+                      </button>
+                    </div>
+
+                    <textarea
+                      required
+                      value={aiPrompt}
+                      onChange={(e) => setAiPrompt(e.target.value)}
+                      placeholder="e.g. music player, food delivery app, audio stream, user auth..."
+                      rows={5}
+                      style={{ width: '100%', padding: '0.75rem 0.875rem', background: 'var(--bg-main)', border: '1px solid var(--border-light)', borderRadius: '0px', color: 'var(--text-primary)', fontSize: '0.875rem', fontFamily: 'var(--font-body)', lineHeight: 1.5 }}
+                    />
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+                      💡 Tip: Click <strong>"IMPROVE IDEA WITH AI"</strong> to automatically refine a simple concept (like "music player") into a full spec.
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowAIModal(false)}
+                      disabled={loadingPreview}
+                      style={{ padding: '0.625rem 1.25rem', border: '1px solid var(--border-light)', background: 'transparent', color: 'var(--text-secondary)', borderRadius: '0px', cursor: 'pointer', fontSize: '0.8125rem', fontFamily: 'var(--font-display)' }}
+                    >
+                      CANCEL
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={loadingPreview || !aiPrompt.trim()}
+                      style={{ padding: '0.625rem 1.5rem', background: 'var(--text-primary)', color: 'var(--bg-main)', border: 'none', borderRadius: '0px', fontWeight: 600, cursor: aiPrompt.trim() ? 'pointer' : 'not-allowed', fontSize: '0.8125rem', fontFamily: 'var(--font-display)', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', opacity: aiPrompt.trim() ? 1 : 0.5 }}
+                    >
+                      {loadingPreview ? (
+                        <>
+                          <Loader2 size={16} className="animate-spin" /> ANALYZING STATES & EDGE CASES...
+                        </>
+                      ) : (
+                        <>
+                          NEXT: REVIEW STATES <ChevronRight size={14} />
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div>
+                  <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
+                    {aiPreview?.projectName}
+                  </h3>
+                  <p style={{ margin: '0 0 1.5rem 0', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                    Gemini AI extracted core states and identified suggested edge cases below. Select which ones to include.
+                  </p>
+
+                  {/* Core States Summary */}
+                  <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'var(--bg-main)', border: '1px solid var(--border-light)' }}>
+                    <div style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)', marginBottom: '0.75rem', letterSpacing: '0.1em' }}>
+                      CORE STATES ({aiPreview?.coreStates.length || 0})
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                      {aiPreview?.coreStates.map((s) => (
+                        <span key={s.id} style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', padding: '0.25rem 0.5rem', border: '1px solid var(--text-primary)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
+                          {s.name} {s.isInitial ? '(INITIAL)' : ''} {s.isFinal ? '(FINAL)' : ''}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Suggested Edge Cases Checklist */}
+                  <div style={{ marginBottom: '1.75rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                      <div style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)', letterSpacing: '0.1em' }}>
+                        SUGGESTED EDGE CASES & FAILURE STATES
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button
+                          type="button"
+                          onClick={() => toggleAllEdgeCases(true)}
+                          style={{ background: 'none', border: 'none', color: 'var(--text-primary)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', cursor: 'pointer', textDecoration: 'underline' }}
+                        >
+                          Accept All
+                        </button>
+                        <span style={{ color: 'var(--border-light)' }}>|</span>
+                        <button
+                          type="button"
+                          onClick={() => toggleAllEdgeCases(false)}
+                          style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', cursor: 'pointer', textDecoration: 'underline' }}
+                        >
+                          Decline All
+                        </button>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '220px', overflowY: 'auto' }}>
+                      {aiPreview?.edgeCaseStates.map((s) => {
+                        const isChecked = Boolean(selectedEdgeCases[s.id]);
+                        return (
+                          <div
+                            key={s.id}
+                            onClick={() => toggleEdgeCase(s.id)}
+                            style={{
+                              padding: '0.875rem',
+                              border: `1px solid ${isChecked ? 'var(--text-primary)' : 'var(--border-light)'}`,
+                              background: isChecked ? 'var(--bg-main)' : 'var(--bg-card)',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'flex-start',
+                              gap: '0.75rem',
+                              transition: 'all 0.15s'
+                            }}
+                          >
+                            <div style={{ marginTop: '0.125rem', color: isChecked ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>
+                              {isChecked ? <CheckSquare size={16} /> : <Square size={16} />}
+                            </div>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                                  {s.name}
+                                </span>
+                                {s.reason && (
+                                  <span style={{ fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', padding: '0.1rem 0.375rem', background: 'var(--bg-card)', border: '1px solid var(--border-light)', color: 'var(--text-secondary)' }}>
+                                    {s.reason}
+                                  </span>
+                                )}
+                              </div>
+                              <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                                {s.description}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <button
+                      type="button"
+                      onClick={() => setAiStep(1)}
+                      disabled={buildingWorkflow}
+                      style={{ padding: '0.625rem 1.25rem', border: '1px solid var(--border-light)', background: 'transparent', color: 'var(--text-secondary)', borderRadius: '0px', cursor: 'pointer', fontSize: '0.8125rem', fontFamily: 'var(--font-display)' }}
+                    >
+                      ← EDIT PROMPT
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleBuildCustomAIWorkflow}
+                      disabled={buildingWorkflow}
+                      style={{ padding: '0.625rem 1.5rem', background: 'var(--text-primary)', color: 'var(--bg-main)', border: 'none', borderRadius: '0px', fontWeight: 600, cursor: 'pointer', fontSize: '0.8125rem', fontFamily: 'var(--font-display)', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+                    >
+                      {buildingWorkflow ? (
+                        <>
+                          <Loader2 size={16} className="animate-spin" /> CREATING WORKFLOW...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles size={14} /> ACCEPT & BUILD WORKFLOW
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+            </div>
           </div>
         )}
 
         {/* Regular Manual New Project Modal */}
         {showModal && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-            <form onSubmit={handleCreateProject} style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--text-primary)', padding: '2.5rem', borderRadius: '0px', width: '420px', maxWidth: '90vw' }}>
+            <form className="responsive-modal" onSubmit={handleCreateProject} style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--text-primary)', padding: '2.5rem', borderRadius: '0px', width: '420px', maxWidth: '90vw' }}>
               <h2 style={{ margin: '0 0 1.5rem 0', fontSize: '1.25rem', fontWeight: 600, fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>INITIALIZE PROJECT</h2>
               
               <div style={{ marginBottom: '1.25rem' }}>

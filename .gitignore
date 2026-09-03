@@ -23,3 +23,6 @@ Thumbs.db
 
 # Antigravity artifacts & logs
 .system_generated/
+
+.vercel
+.env*.local
