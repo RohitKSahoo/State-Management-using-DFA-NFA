@@ -32,7 +32,7 @@ export async function enhanceUserPrompt(prompt: string): Promise<string> {
 The user will provide a simple application idea or feature description.
 Your job is to expand and refine it into a comprehensive specification suitable for building an Finite State Automaton / State Machine diagram.
 Include key user actions, state transitions, error handling scenarios, and edge cases.
-Keep the output concise, structured, and under 150 words. Plain text only, no markdown formatting like bolding or headers.`;
+Keep the output concise, structured, and under 250 words. Plain text only, no markdown formatting like bolding or headers.`;
 
   try {
     const result = await model.generateContent([
@@ -101,7 +101,7 @@ Rules:
 2. State IDs for core states should use prefix 's' (e.g., s1, s2, s3).
 3. State IDs for edge case states should use prefix 'e' (e.g., e1, e2, e3).
 4. Edge case states should include failure/error/recovery states, network timeouts, invalid inputs, or resource exhausted states.
-5. Provide 4-6 core states and 2-4 edge case states with appropriate connecting transitions.
+5. Provide 6-8 core states and 4-8 edge case states with appropriate connecting transitions.
 6. Use UPPERCASE for state names and lowercase_snake_case for event names.`;
 
   try {

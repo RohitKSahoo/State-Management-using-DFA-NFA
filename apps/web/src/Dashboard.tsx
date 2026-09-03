@@ -412,7 +412,7 @@ export function Dashboard({ onOpenWorkflow, onBackToLanding }: DashboardProps) {
                         }}
                       >
                         {enhancingPrompt ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
-                        {enhancingPrompt ? 'IMPROVING IDEA...' : '✨ IMPROVE IDEA WITH AI'}
+                        {enhancingPrompt ? 'IMPROVING IDEA...' : 'IMPROVE IDEA'}
                       </button>
                     </div>
 
@@ -425,7 +425,7 @@ export function Dashboard({ onOpenWorkflow, onBackToLanding }: DashboardProps) {
                       style={{ width: '100%', padding: '0.75rem 0.875rem', background: 'var(--bg-main)', border: '1px solid var(--border-light)', borderRadius: '0px', color: 'var(--text-primary)', fontSize: '0.875rem', fontFamily: 'var(--font-body)', lineHeight: 1.5 }}
                     />
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-                      💡 Tip: Click <strong>"IMPROVE IDEA WITH AI"</strong> to automatically refine a simple concept (like "music player") into a full spec.
+                      💡 Tip: Click <strong>"IMPROVE IDEA"</strong> to automatically expand a simple concept into a full workflow.
                     </div>
                   </div>
 

@@ -355,7 +355,7 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
         subtitle: 'Automata Validation Exception',
         details: [
           `Error Reason: ${err.message || 'No initial state defined or invalid graph structure.'}`,
-          `Required Fix: Ensure your workflow graph has at least 1 Initial State ($q_0$) before converting.`
+          `Required Fix: Ensure your workflow graph has at least 1 Initial State (q₀) before converting.`
         ],
         badgeColor: '#ef4444'
       });
@@ -657,10 +657,10 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
                     <span style={{ color: '#a1a1aa' }}>■</span> Neutral / Standard
                   </button>
                   <button onClick={() => handleAddNode('START')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', background: 'none', border: 'none', color: '#4ade80', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', cursor: 'pointer', textAlign: 'left' }}>
-                    <span style={{ color: '#22c55e' }}>■</span> Start ($q_0$)
+                    <span style={{ color: '#22c55e' }}>■</span> Start (q₀)
                   </button>
                   <button onClick={() => handleAddNode('FINAL')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', background: 'none', border: 'none', color: '#f87171', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', cursor: 'pointer', textAlign: 'left' }}>
-                    <span style={{ color: '#ef4444' }}>■</span> Final ($F$)
+                    <span style={{ color: '#ef4444' }}>■</span> Final (F)
                   </button>
                   <button onClick={() => handleAddNode('TRANSACTION')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', background: 'none', border: 'none', color: '#60a5fa', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', cursor: 'pointer', textAlign: 'left' }}>
                     <span style={{ color: '#3b82f6' }}>■</span> Transaction
@@ -695,9 +695,9 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
           {/* Floating State Color Legend Badge */}
           <div style={{ position: 'absolute', bottom: 16, left: 16, backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-light)', padding: '0.75rem 1rem', borderRadius: '0px', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)', zIndex: 10, display: 'flex', gap: '1rem', alignItems: 'center' }}>
             <span style={{ color: 'var(--text-tertiary)' }}>LEGEND:</span>
-            <span style={{ color: '#3f3f46', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>■ Neutral / Standard</span>
-            <span style={{ color: '#22c55e', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>■ Start ($q_0$)</span>
-            <span style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>■ Final ($F$)</span>
+            <span style={{ color: '#3f3f46', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>■ Neutral</span>
+            <span style={{ color: '#22c55e', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>■ Start (q₀)</span>
+            <span style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>■ Final (F)</span>
             <span style={{ color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>■ Transaction</span>
             <span style={{ color: '#c084fc', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>■ Processing</span>
             <span style={{ color: '#fb923c', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>■ Exception</span>
@@ -746,11 +746,11 @@ export const WorkflowEditor: React.FC<EditorProps> = ({ workflowId, onBack }) =>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer' }}>
                       <input type="checkbox" checked={!!selectedNode.data.isInitial} onChange={() => handleToggleInitial(selectedNode.id)} />
-                      Set as Initial State ($q_0$)
+                      Set as Initial State (q₀)
                     </label>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer' }}>
                       <input type="checkbox" checked={!!selectedNode.data.isFinal} onChange={() => handleToggleFinal(selectedNode.id)} />
-                      Set as Final / Accepting State ($F$)
+                      Set as Final / Accepting State (F)
                     </label>
                   </div>
 
