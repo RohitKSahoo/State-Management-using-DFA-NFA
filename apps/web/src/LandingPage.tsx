@@ -20,7 +20,7 @@ export const LandingPage: React.FC<LandingProps> = ({ onProceed }) => {
         {/* Editorial Top Mark */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '1.5rem', marginBottom: '6rem' }}>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8125rem', letterSpacing: '0.15em', color: 'var(--text-secondary)' }}>
-            STATE MANAGEMENT AND ANALYSIS / AUTOMATA ENGINE
+            APPLICATION STATE DESIGNER &amp; VALIDATOR / AUTOMATA ENGINE
           </div>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}>
             VER 1.0 (DFA/NFA)
@@ -41,12 +41,12 @@ export const LandingPage: React.FC<LandingProps> = ({ onProceed }) => {
               color: 'var(--text-primary)'
             }}
           >
-            State Management and Analysis
+            Application State Designer &amp; Validator
           </h1>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '4rem', alignItems: 'start' }}>
             <p style={{ fontSize: '1.25rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, fontWeight: 400 }}>
-              State Management and Analysis models application workflows as formal Deterministic Finite Automata (DFA) and Non-Deterministic Finite Automata (NFA). It statically identifies missing start nodes, non-deterministic transition collisions, unreachable paths, and dead ends before execution.
+              Application State Designer &amp; Validator models application workflows as formal Deterministic Finite Automata (DFA) and Non-Deterministic Finite Automata (NFA). It statically identifies missing start nodes, non-deterministic transition collisions, unreachable paths, and dead ends before execution.
             </p>
 
             <div style={{ borderLeft: '2px solid var(--text-primary)', paddingLeft: '1.5rem' }}>
@@ -81,10 +81,10 @@ export const LandingPage: React.FC<LandingProps> = ({ onProceed }) => {
           </div>
         </section>
 
-        {/* Updated Footer Section: Learn How to Use State Management and Analysis */}
+        {/* Updated Footer Section: Learn How to Use */}
         <section style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-light)', paddingTop: '3rem' }}>
           <div>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: '1.75rem', fontStyle: 'italic' }}>New to State Management and Analysis?</div>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: '1.75rem', fontStyle: 'italic' }}>New to Application State Designer &amp; Validator?</div>
             <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>Learn how to model, validate, and simulate your app workflows in 4 simple steps.</div>
           </div>
 
@@ -116,7 +116,7 @@ export const LandingPage: React.FC<LandingProps> = ({ onProceed }) => {
             <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--text-primary)', padding: '2.5rem', width: '640px', maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto', borderRadius: '0px' }}>
               
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', borderBottom: '1px solid var(--border-light)', paddingBottom: '1rem' }}>
-                <h2 style={{ margin: 0, fontSize: '1.5rem', fontFamily: 'var(--font-serif)', fontStyle: 'italic' }}>How to Use State Management and Analysis</h2>
+                <h2 style={{ margin: 0, fontSize: '1.5rem', fontFamily: 'var(--font-serif)', fontStyle: 'italic' }}>How to Use Application State Designer &amp; Validator</h2>
                 <button onClick={() => setShowGuideModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.25rem' }}>
                   <X size={20} />
                 </button>
@@ -149,7 +149,7 @@ export const LandingPage: React.FC<LandingProps> = ({ onProceed }) => {
                   <div>
                     <strong>Run Static Analysis</strong>
                     <div style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-                      Click the "Analyze" button. State Management and Analysis will instantly scan your diagram and highlight problems: unreachable screens, dead-end states, conflicting duplicate events, or infinite loops.
+                      Click the "Analyze" button. Application State Designer &amp; Validator will instantly scan your diagram and highlight problems: unreachable screens, dead-end states, conflicting duplicate events, or infinite loops.
                     </div>
                   </div>
                 </div>
@@ -157,7 +157,7 @@ export const LandingPage: React.FC<LandingProps> = ({ onProceed }) => {
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8125rem', color: 'var(--text-tertiary)', paddingTop: '2px' }}>04</div>
                   <div>
-                    <strong>Simulate & Generate Tests</strong>
+                    <strong>Simulate &amp; Generate Tests</strong>
                     <div style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
                       Type a sequence of events into the Event Simulator to test execution paths step-by-step, or click "Generate Tests" to produce valid/invalid test suites automatically.
                     </div>
@@ -183,11 +183,9 @@ export const LandingPage: React.FC<LandingProps> = ({ onProceed }) => {
                   PROCEED TO WORKSPACE →
                 </button>
               </div>
-
             </div>
           </div>
         )}
-
       </div>
     </div>
   );
